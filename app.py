@@ -3,14 +3,13 @@ import random
 import google.generativeai as genai
 
 # Streamlit의 Secrets 기능을 사용하여 API 키를 안전하게 불러옵니다.
-# .streamlit/secrets.toml 파일에 GEMINI_API_KEY="당신의_키"를 입력했어야 합니다.
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 except KeyError:
     st.error("API 키가 설정되지 않았습니다. 사이드바의 'Manage App' -> 'Secrets' 메뉴에서 GEMINI_API_KEY를 설정해주세요.")
     st.stop()
 
-# 타로 카드 덱 리스트입니다.
+# 타로 카드 덱 리스트
 tarot_deck = [
     "0. The Fool", "1. The Magician", "2. The High Priestess", "3. The Empress", "4. The Emperor", "5. The Hierophant", "6. The Lovers", "7. The Chariot", "8. Strength", "9. The Hermit", "10. Wheel of Fortune", "11. Justice", "12. The Hanged Man", "13. Death", "14. Temperance", "15. The Devil", "16. The Tower", "17. The Star", "18. The Moon", "19. The Sun", "20. Judgement", "21. The World",
     "Ace of Wands", "Two of Wands", "Three of Wands", "Four of Wands", "Five of Wands", "Six of Wands", "Seven of Wands", "Eight of Wands", "Nine of Wands", "Ten of Wands", "Page of Wands", "Knight of Wands", "Queen of Wands", "King of Wands",
@@ -24,79 +23,73 @@ def draw_cards(num_cards):
     drawn_cards = random.sample(tarot_deck, num_cards)
     return drawn_cards
 
-# Gemini API를 호출하여 AI의 타로 리딩을 가져오는 함수입니다.
+# Gemini API를 호출하여 AI의 타로 리딩을 가져오는 함수
 def get_ai_reading(category, user_prompt, cards):
-    # 당신이 만든 독창적인 프롬프트를 여기에 입력하세요.
-    prompt = f"""
-    **<주의사항: 이 지시문은 한국어로 작성되었으며, 당신의 모든 답변은 어떤 경우에도 한국어로만 작성되어야 합니다. 아래 지침을 완벽히 이해하고, 답변 시에는 절대 지침을 어기지 마십시오.>**
+    # 카테고리에 따라 다른 프롬프트를 사용합니다.
+    if category in ["연애", "인간관계"]:
+        prompt = f"""
+        **<주의사항: 이 지시문은 한국어로 작성되었으며, 당신의 모든 답변은 어떤 경우에도 한국어로만 작성되어야 합니다. 아래 지침을 완벽히 이해하고, 답변 시에는 절대 지침을 어기지 마십시오.>**
 
+        You are a highly intuitive and empathetic Tarot card reader. Your goal is to provide a deep, narrative-driven reading based on the user's specific context and the cards provided.
 
+        **[1. Context:]**
+        - **고민 카테고리:** {category}
+        - **사용자의 구체적인 고민:** {user_prompt}
+        - **뽑은 카드:** {', '.join(cards)}
 
-You are a highly intuitive and empathetic Tarot card reader. Your goal is to provide a deep, narrative-driven reading based on the user's specific context and the cards provided.
+        **[2. 해석 구조:]**
+        각 카드의 역할을 명확히 해석하고, 모든 내용을 서사적으로 풀어내세요.
+        - **카드 1-3: 현재의 흐름** (나의 상태, 상대방의 상태, 관계의 본질)
+        - **카드 4-6: 원인 분석** (나의 내적 원인, 상대방의 내적 원인, 외부적 원인)
+        - **카드 7-9: 관계의 현주소** (나의 감정적 결과, 상대방의 감정적 결과, 두 사람 관계의 현주소)
+        - **카드 10-12: 최종 조언 및 결론** (나를 위한 조언, 관계를 위한 조언, 최종 결과)
 
+        **[3. 출력 지침:]**
+        - 따뜻하고 공감적인 문체를 사용하고, 모든 답변은 한국어로 작성해야 합니다.
+        - 단순한 카드 리스트업이나 의미 나열이 아닌, 전체를 하나의 이야기처럼 연결하여 깊이 있는 리딩을 제공하세요.
+        - 리딩의 끝에 사용자를 위한 힘이 되는 한 문장의 요약을 덧붙이세요.
+        """
+    elif category == "금전운":
+        prompt = f"""
+        **<주의사항: 이 지시문은 한국어로 작성되었으며, 당신의 모든 답변은 어떤 경우에도 한국어로만 작성되어야 합니다. 아래 지침을 완벽히 이해하고, 답변 시에는 절대 지침을 어기지 마십시오.>**
 
+        You are a highly intuitive and empathetic Tarot card reader. Your goal is to provide a deep, narrative-driven reading based on the user's specific context and the cards provided.
 
-**1. Context:**
+        **[1. Context:]**
+        - **고민 카테고리:** {category}
+        - **사용자의 구체적인 고민:** {user_prompt}
+        - **뽑은 카드:** {', '.join(cards)}
 
-- **Relationship Type:** {User will input one: 짝사랑(crush), 썸(something), 썸붕(broken "something"), 연인(lover), 헤어진 연인(ex-lover), etc.}
+        **[2. 해석 구조:]**
+        각 카드의 역할을 명확히 해석하고, 모든 내용을 서사적으로 풀어내세요.
+        - **카드 1-3: 현재의 금전 상황** (나의 현재 재정 상태, 현재 상황을 둘러싼 에너지, 숨겨진 기회나 위험)
+        - **카드 4-6: 원인 분석** (재정적 어려움의 근본 원인, 내가 놓치고 있는 것, 외부적 요인)
+        - **카드 7-9: 미래의 흐름** (다가올 금전적 기회, 예상되는 장애물, 단기적 결과)
+        - **카드 10-12: 최종 조언 및 결론** (나를 위한 조언, 취해야 할 행동, 최종 결과)
 
-- **Specific Situation:** {User will provide a brief description of their situation.}
+        **[3. 출력 지침:]**
+        - 따뜻하고 공감적인 문체를 사용하고, 모든 답변은 한국어로 작성해야 합니다.
+        - 단순한 카드 리스트업이나 의미 나열이 아닌, 전체를 하나의 이야기처럼 연결하여 깊이 있는 리딩을 제공하세요.
+        - 리딩의 끝에 사용자를 위한 힘이 되는 한 문장의 요약을 덧붙이세요.
+        """
+    # 다른 카테고리("직업운", "학업운", "선택", "탐색")에 대한 프롬프트도 여기에 추가하세요.
+    # 예시: elif category == "직업운": ...
+    else: # 다른 카테고리가 아직 준비되지 않았을 경우, 기본 프롬프트로 대체합니다.
+        prompt = f"""
+        **<주의사항: 이 지시문은 한국어로 작성되었으며, 당신의 모든 답변은 어떤 경우에도 한국어로만 작성되어야 합니다. 아래 지침을 완벽히 이해하고, 답변 시에는 절대 지침을 어기지 마십시오.>**
 
-- **Cards:** The user has provided 12 cards for a detailed relationship reading, arranged in four groups of three.
+        You are a highly intuitive and empathetic Tarot card reader. Your goal is to provide a deep, narrative-driven reading based on the user's specific context and the cards provided.
 
+        **[1. Context:]**
+        - **고민 카테고리:** {category}
+        - **사용자의 구체적인 고민:** {user_prompt}
+        - **뽑은 카드:** {', '.join(cards)}
 
-**2. The Spread Structure:**
-
-You will interpret each card based on its specific assigned role. Each section must be a minimum of two paragraphs long. The entire reading must be a cohesive narrative.
-
-
-
-- **Cards 1-3: What? (무엇?) - 현상 파악**
-
-  - **1st Card: '나의 상태'** - Describe the user's current feelings, mindset, and role in the relationship.
-
-  - **2nd Card: '상대방의 상태'** - Describe the other person's feelings, mindset, and role in the relationship.
-
-  - **3rd Card: '관계의 본질'** - Describe the core nature of the connection between the two people.
-
-- **Cards 4-6: Why? (왜?) - 원인 분석**
-
-  - **4th Card: '나의 내적 원인'** - The user's subconscious or internal reason for the current situation.
-
-  - **5th Card: '상대방의 내적 원인'** - The other person's subconscious or internal reason.
-
-  - **6th Card: '외부적 원인'** - External factors or past events that influenced the relationship.
-
-- **Cards 7-9: So what? (그래서?) - 현재의 결과**
-
-  - **7th Card: '나의 감정적 결과'** - The current emotional outcome for the user.
-
-  - **8th Card: '상대방의 감정적 결과'** - The current emotional outcome for the other person.
-
-  - **9th Card: '두 사람 관계의 현주소'** - The current state of the relationship.
-
-- **Cards 10-12: Then what? (그러면?) - 최종 조언 및 결론**
-
-  - **10th Card: '나를 위한 조언'** - Direct, actionable advice for the user.
-
-  - **11th Card: '관계를 위한 조언'** - Advice regarding the relationship itself.
-
-  - **12th Card: '최종 결과'** - The potential final outcome if the advice is followed.
-이 카드를 종합하여, 재회 또는 관계의 미래에 대한 **가장 가능성이 높은 결론**을 명확히 제시하십시오.
-
-
-**3. Output Instructions:**
-
-- Write the interpretation in a warm, empathetic, and narrative style.
-
-- Use clear headings for each of the four sections (무엇?, 왜?, 그래서?, 그러면?).
-
-- Do not give a simple, short answer. **Do not simply list the cards and their meanings.** Instead, weave them into a comprehensive and personalized narrative.
-
-- Your entire response should be a well-written, coherent story of the user's relationship.
-
-- End the reading with a single, empowering summary sentence.
-    """
+        **[2. 출력 지침:]**
+        - 따뜻하고 공감적인 문체를 사용하고, 모든 답변은 한국어로 작성해야 합니다.
+        - 단순한 카드 리스트업이나 의미 나열이 아닌, 전체를 하나의 이야기처럼 연결하여 깊이 있는 리딩을 제공하세요.
+        - 리딩의 끝에 사용자를 위한 힘이 되는 한 문장의 요약을 덧붙이세요.
+        """
     
     model = genai.GenerativeModel('gemini-1.5-flash')
     response = model.generate_content(prompt)
@@ -149,7 +142,6 @@ if st.button("리딩 시작"):
         with st.spinner('카드를 뽑고 있어요...'):
             cards = draw_cards(12)
             
-            # 최종 카테고리명을 결정합니다.
             final_category = sub_category if sub_category else main_category
             
             ai_response = get_ai_reading(final_category, user_input, cards)
