@@ -1,6 +1,7 @@
 import streamlit as st
 import random
 import google.generativeai as genai
+import json
 
 # Streamlit의 Secrets 기능을 사용하여 API 키를 안전하게 불러옵니다.
 try:
@@ -9,7 +10,7 @@ except KeyError:
     st.error("API 키가 설정되지 않았습니다. 사이드바의 'Manage App' -> 'Secrets' 메뉴에서 GEMINI_API_KEY를 설정해주세요.")
     st.stop()
 
-# 타로 카드 덱 리스트
+# 유틸리티 모듈에서 카드 덱과 드로우 함수를 불러옵니다.
 tarot_deck = [
     "0. The Fool", "1. The Magician", "2. The High Priestess", "3. The Empress", "4. The Emperor", "5. The Hierophant", "6. The Lovers", "7. The Chariot", "8. Strength", "9. The Hermit", "10. Wheel of Fortune", "11. Justice", "12. The Hanged Man", "13. Death", "14. Temperance", "15. The Devil", "16. The Tower", "17. The Star", "18. The Moon", "19. The Sun", "20. Judgement", "21. The World",
     "Ace of Wands", "Two of Wands", "Three of Wands", "Four of Wands", "Five of Wands", "Six of Wands", "Seven of Wands", "Eight of Wands", "Nine of Wands", "Ten of Wands", "Page of Wands", "Knight of Wands", "Queen of Wands", "King of Wands",
@@ -20,134 +21,114 @@ tarot_deck = [
 
 def draw_cards(num_cards):
     random.shuffle(tarot_deck)
-    drawn_cards = random.sample(tarot_deck, num_cards)
-    return drawn_cards
+    return random.sample(tarot_deck, num_cards)
+
+# JSON 파일에서 프롬프트와 스프레드 데이터를 불러옵니다.
+def load_data():
+    try:
+        with open('prompts.json', 'r', encoding='utf-8') as f:
+            prompts_data = json.load(f)
+        with open('spreads.json', 'r', encoding='utf-8') as f:
+            spreads_data = json.load(f)
+        return prompts_data, spreads_data
+    except FileNotFoundError:
+        st.error("데이터 파일을 찾을 수 없습니다. 'prompts.json'과 'spreads.json' 파일이 프로젝트 루트에 있는지 확인해주세요.")
+        st.stop()
+    except json.JSONDecodeError:
+        st.error("JSON 파일 형식이 올바르지 않습니다. 파일을 확인해주세요.")
+        st.stop()
+
+prompts_data, spreads_data = load_data()
 
 # Gemini API를 호출하여 AI의 타로 리딩을 가져오는 함수
-def get_ai_reading(category, user_prompt, cards):
-    # 카테고리에 따라 다른 프롬프트를 사용합니다.
-    if category in ["연애", "인간관계"]:
-        prompt = f"""
-        **<주의사항: 이 지시문은 한국어로 작성되었으며, 당신의 모든 답변은 어떤 경우에도 한국어로만 작성되어야 합니다. 아래 지침을 완벽히 이해하고, 답변 시에는 절대 지침을 어기지 마십시오.>**
+def get_ai_reading(category, user_prompt, spread_name, cards):
+    current_category = prompts_data.get(category, {})
+    prompt_template = current_category.get("templates", {}).get(spread_name)
+    
+    if not prompt_template:
+        st.warning(f"'{category}'에 대한 '{spread_name}' 템플릿이 아직 준비되지 않았습니다. 기본 프롬프트를 사용합니다.")
+        return "죄송합니다. 아직 해당 카테고리에 대한 리딩을 준비하지 못했습니다."
 
-        You are a highly intuitive and empathetic Tarot card reader. Your goal is to provide a deep, narrative-driven reading based on the user's specific context and the cards provided.
-
-        **[1. Context:]**
-        - **고민 카테고리:** {category}
-        - **사용자의 구체적인 고민:** {user_prompt}
-        - **뽑은 카드:** {', '.join(cards)}
-
-        **[2. 해석 구조:]**
-        각 카드의 역할을 명확히 해석하고, 모든 내용을 서사적으로 풀어내세요.
-        - **카드 1-3: 현재의 흐름** (나의 상태, 상대방의 상태, 관계의 본질)
-        - **카드 4-6: 원인 분석** (나의 내적 원인, 상대방의 내적 원인, 외부적 원인)
-        - **카드 7-9: 관계의 현주소** (나의 감정적 결과, 상대방의 감정적 결과, 두 사람 관계의 현주소)
-        - **카드 10-12: 최종 조언 및 결론** (나를 위한 조언, 관계를 위한 조언, 최종 결과)
-
-        **[3. 출력 지침:]**
-        - 따뜻하고 공감적인 문체를 사용하고, 모든 답변은 한국어로 작성해야 합니다.
-        - 단순한 카드 리스트업이나 의미 나열이 아닌, 전체를 하나의 이야기처럼 연결하여 깊이 있는 리딩을 제공하세요.
-        - 리딩의 끝에 사용자를 위한 힘이 되는 한 문장의 요약을 덧붙이세요.
-        """
-    elif category == "금전운":
-        prompt = f"""
-        **<주의사항: 이 지시문은 한국어로 작성되었으며, 당신의 모든 답변은 어떤 경우에도 한국어로만 작성되어야 합니다. 아래 지침을 완벽히 이해하고, 답변 시에는 절대 지침을 어기지 마십시오.>**
-
-        You are a highly intuitive and empathetic Tarot card reader. Your goal is to provide a deep, narrative-driven reading based on the user's specific context and the cards provided.
-
-        **[1. Context:]**
-        - **고민 카테고리:** {category}
-        - **사용자의 구체적인 고민:** {user_prompt}
-        - **뽑은 카드:** {', '.join(cards)}
-
-        **[2. 해석 구조:]**
-        각 카드의 역할을 명확히 해석하고, 모든 내용을 서사적으로 풀어내세요.
-        - **카드 1-3: 현재의 금전 상황** (나의 현재 재정 상태, 현재 상황을 둘러싼 에너지, 숨겨진 기회나 위험)
-        - **카드 4-6: 원인 분석** (재정적 어려움의 근본 원인, 내가 놓치고 있는 것, 외부적 요인)
-        - **카드 7-9: 미래의 흐름** (다가올 금전적 기회, 예상되는 장애물, 단기적 결과)
-        - **카드 10-12: 최종 조언 및 결론** (나를 위한 조언, 취해야 할 행동, 최종 결과)
-
-        **[3. 출력 지침:]**
-        - 따뜻하고 공감적인 문체를 사용하고, 모든 답변은 한국어로 작성해야 합니다.
-        - 단순한 카드 리스트업이나 의미 나열이 아닌, 전체를 하나의 이야기처럼 연결하여 깊이 있는 리딩을 제공하세요.
-        - 리딩의 끝에 사용자를 위한 힘이 되는 한 문장의 요약을 덧붙이세요.
-        """
-    # 다른 카테고리("직업운", "학업운", "선택", "탐색")에 대한 프롬프트도 여기에 추가하세요.
-    # 예시: elif category == "직업운": ...
-    else: # 다른 카테고리가 아직 준비되지 않았을 경우, 기본 프롬프트로 대체합니다.
-        prompt = f"""
-        **<주의사항: 이 지시문은 한국어로 작성되었으며, 당신의 모든 답변은 어떤 경우에도 한국어로만 작성되어야 합니다. 아래 지침을 완벽히 이해하고, 답변 시에는 절대 지침을 어기지 마십시오.>**
-
-        You are a highly intuitive and empathetic Tarot card reader. Your goal is to provide a deep, narrative-driven reading based on the user's specific context and the cards provided.
-
-        **[1. Context:]**
-        - **고민 카테고리:** {category}
-        - **사용자의 구체적인 고민:** {user_prompt}
-        - **뽑은 카드:** {', '.join(cards)}
-
-        **[2. 출력 지침:]**
-        - 따뜻하고 공감적인 문체를 사용하고, 모든 답변은 한국어로 작성해야 합니다.
-        - 단순한 카드 리스트업이나 의미 나열이 아닌, 전체를 하나의 이야기처럼 연결하여 깊이 있는 리딩을 제공하세요.
-        - 리딩의 끝에 사용자를 위한 힘이 되는 한 문장의 요약을 덧붙이세요.
-        """
+    prompt = prompt_template.format(category=category, user_prompt=user_prompt, cards=', '.join(cards))
     
     model = genai.GenerativeModel('gemini-1.5-flash')
     response = model.generate_content(prompt)
     return response.text
 
 # 앱의 메인 화면입니다.
-st.title("Astarot - 나만의 AI 타로 리더")
+st.title("asTarot - 내가 쓰려고 만든 AI 타로")
 st.header("당신의 고민을 이야기해주세요.")
 
 # 1. 상위 고민 범주를 선택하는 드롭다운 메뉴를 만듭니다.
 main_category = st.selectbox(
     "고민 범주를 선택하세요:",
-    ("선택", "관계", "성공", "선택", "탐색")
+    ("해당 카테고리에 맞는 질문을 골라주세요", "관계", "성공", "결정", "탐색")
 )
 
-# 2. '관계'와 '성공' 범주에 하위 카테고리를 추가합니다.
-sub_category = ""
-if main_category == "관계":
-    sub_category = st.radio("어떤 관계에 대한 고민인가요?", ("연애", "인간관계"))
-elif main_category == "성공":
-    sub_category = st.radio("어떤 성공에 대한 고민인가요?", ("금전운", "직업운", "학업운"))
+# 2. 하위 카테고리 및 질문 입력 필드 동적 생성
+sub_category = main_category
+user_input_label = "고민을 구체적으로 입력하세요:"
 
-# 3. 카테고리에 따라 다른 질문을 표시합니다.
-user_input = ""
 if main_category == "관계":
+    sub_category_options = ["연애", "대인관계", "반려동물/동물 등"]
+    sub_category = st.radio("어떤 관계에 대한 고민인가요?", sub_category_options)
     if sub_category == "연애":
-        user_input = st.text_area("연애 상대방과의 관계와 구체적인 상황을 입력하세요:", height=150)
-    elif sub_category == "인간관계":
-        user_input = st.text_area("고민이 되는 상대방과의 관계와 구체적인 상황을 입력하세요:", height=150)
+        user_input_label = "연애 상대방과의 관계와 구체적인 상황을 입력하세요:"
+    elif sub_category == "대인관계":
+        user_input_label = "가족, 친구, 동료, 온라인/익명 관계 등 상대방과의 구체적인 상황을 입력하세요:"
+    elif sub_category == "반려동물/동물 등":
+        user_input_label = "반려동물, 식물 등 생명체 또는 사물과의 관계에 대한 구체적인 상황을 입력하세요:"
 elif main_category == "성공":
+    sub_category_options = ["금전운", "직업운", "학업운"]
+    sub_category = st.radio("어떤 성공에 대한 고민인가요?", sub_category_options)
     if sub_category == "금전운":
-        user_input = st.text_area("투자, 사업, 재테크 등 금전과 관련된 고민을 구체적으로 입력하세요:", height=150)
+        user_input_label = "금전 흐름, 투자, 사업, 재테크, 복권 등 돈과 관련된 모든 고민을 구체적으로 입력하세요:"
     elif sub_category == "직업운":
-        user_input = st.text_area("취업, 이직, 승진, 사업 등 직업과 관련된 고민을 구체적으로 입력하세요:", height=150)
+        user_input_label = "취업, 이직, 승진, 사업 등 직업과 관련된 구체적인 고민을 입력하세요:"
     elif sub_category == "학업운":
-        user_input = st.text_area("시험, 전공, 진학 등 학업과 관련된 고민을 구체적으로 입력하세요:", height=150)
-elif main_category == "선택":
-    user_input = st.text_area("두 가지 선택지 사이에서 고민하고 있는 상황을 구체적으로 입력하세요:", height=150)
+        user_input_label = "시험, 전공, 진학 등 학업과 관련된 구체적인 고민을 입력하세요:"
+elif main_category == "결정":
+    sub_category_options = ["다중 선택", "우선순위 결정", "타이밍 결정", "포기 여부 결정", "접근 방식 결정", "가치 판단 및 윤리적 결정"]
+    sub_category = st.radio("어떤 종류의 결정에 대한 고민인가요?", sub_category_options)
+    if sub_category == "다중 선택":
+        user_input_label = "여러 선택지 중 가장 적합한 것을 고르기 위한 상황과 대안들을 구체적으로 입력하세요:"
+    elif sub_category == "우선순위 결정":
+        user_input_label = "여러 가지를 모두 할 수 없을 때, 어떤 순서로 진행할지 고민하는 상황을 입력하세요:"
+    elif sub_category == "타이밍 결정":
+        user_input_label = "무엇을 할지는 정했지만 '언제' 할지 고민하는 상황을 구체적으로 입력하세요:"
+    elif sub_category == "포기 여부 결정":
+        user_input_label = "어떤 상황을 계속할지, 아니면 멈춰야 할지 고민하는 상황을 입력하세요:"
+    elif sub_category == "접근 방식 결정":
+        user_input_label = "목표는 같지만 '어떻게' 할지, 방법이나 방향을 선택하는 상황을 입력하세요:"
+    elif sub_category == "가치 판단 및 윤리적 결정":
+        user_input_label = "어떤 가치에 따라 결정을 내릴지 고민하고 있는 윤리적/가치적 문제를 입력하세요:"
 elif main_category == "탐색":
-    user_input = st.text_area("자신의 내면, 미래, 운명 등과 관련된 고민을 구체적으로 입력하세요:", height=150)
-elif main_category == "선택":
+    sub_category = "탐색"
+    user_input_label = "삶의 의미, 내면 탐구, 영성, 운명 등 근원적인 고민에 대해 자유롭게 입력하세요:"
+
+if main_category == "해당 카테고리에 맞는 질문을 골라주세요":
     st.markdown("---")
     st.write("고민 범주를 선택하면 맞춤형 질문이 나타납니다.")
+else:
+    user_input = st.text_area(user_input_label, height=150)
+    
+    # 스프레드 선택 기능 추가
+    spread_options = list(spreads_data.keys())
+    spread_name = st.selectbox(
+        "사용할 스프레드를 선택하세요:",
+        options=spread_options,
+        help="스프레드를 선택하면 리딩에 사용되는 카드 수와 위치별 의미가 달라집니다."
+    )
 
-# 4. '리딩 시작' 버튼을 만들고, 유효한 카테고리가 선택되었을 때만 작동하게 합니다.
-if st.button("리딩 시작"):
-    if main_category == "선택":
-        st.warning("먼저 고민 범주를 선택해주세요.")
-    elif user_input:
-        with st.spinner('카드를 뽑고 있어요...'):
-            cards = draw_cards(12)
+    if st.button("리딩 시작"):
+        if not user_input:
+            st.warning("고민을 입력해주세요.")
+        else:
+            with st.spinner('카드를 뽑고 있어요...'):
+                num_cards = spreads_data.get(spread_name, {}).get("num_cards")
+                cards = draw_cards(num_cards)
+                ai_response = get_ai_reading(sub_category, user_input, spread_name, cards)
             
-            final_category = sub_category if sub_category else main_category
-            
-            ai_response = get_ai_reading(final_category, user_input, cards)
-        
-        st.markdown("---")
-        st.subheader("타로 리딩 결과")
-        st.write(ai_response)
-    else:
-        st.warning("고민을 입력해주세요.")
+            st.markdown("---")
+            st.subheader("타로 리딩 결과")
+            st.write(ai_response)
