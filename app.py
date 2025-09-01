@@ -1,6 +1,7 @@
 import streamlit as st
 import random
 import google.generativeai as genai
+import json
 
 # Streamlit의 Secrets 기능을 사용하여 API 키를 안전하게 불러옵니다.
 try:
@@ -10,6 +11,7 @@ except KeyError:
     st.stop()
 
 # 타로 카드 덱 리스트입니다.
+# 전체 78장
 tarot_deck = [
     "0. The Fool", "1. The Magician", "2. The High Priestess", "3. The Empress", "4. The Emperor", "5. The Hierophant", "6. The Lovers", "7. The Chariot", "8. Strength", "9. The Hermit", "10. Wheel of Fortune", "11. Justice", "12. The Hanged Man", "13. Death", "14. Temperance", "15. The Devil", "16. The Tower", "17. The Star", "18. The Moon", "19. The Sun", "20. Judgement", "21. The World",
     "Ace of Wands", "Two of Wands", "Three of Wands", "Four of Wands", "Five of Wands", "Six of Wands", "Seven of Wands", "Eight of Wands", "Nine of Wands", "Ten of Wands", "Page of Wands", "Knight of Wands", "Queen of Wands", "King of Wands",
@@ -18,203 +20,270 @@ tarot_deck = [
     "Ace of Pentacles", "Two of Pentacles", "Three of Pentacles", "Four of Pentacles", "Five of Pentacles", "Six of Pentacles", "Seven of Pentacles", "Eight of Pentacles", "Nine of Pentacles", "Ten of Pentacles", "Page of Pentacles", "Knight of Pentacles", "Queen of Pentacles", "King of Pentacles"
 ]
 
-# 타로 카드 이미지 URL 딕셔너리입니다. (실제 이미지 경로로 대체 필요)
-image_map = {card: f"https://placehold.co/100x150/d9f0ff/000000?text={card.replace(' ', '%20')}" for card in tarot_deck}
-image_map["Tarot Card Back"] = "https://placehold.co/100x150/d4af37/ffffff?text=Tarot+Card"
+# 집시의 십자 스프레드용 메이저 아르카나 카드 15장
+gypsy_major_arcana_deck = [
+    "0. The Fool", "1. The Magician", "2. The High Priestess", "3. The Empress", "4. The Emperor",
+    "5. The Hierophant", "6. The Lovers", "7. The Chariot", "8. Strength", "9. The Hermit",
+    "10. Wheel of Fortune", "11. Justice", "12. The Hanged Man", "13. Death", "14. Temperance"
+]
 
-def get_tarot_reading(prompt, cards, spread_name):
-    """
-    제공된 프롬프트와 카드 목록을 기반으로 Gemini 모델에게 타로 리딩을 요청합니다.
-    """
-    model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash-preview-05-20",
-        system_instruction=f"당신은 {spread_name} 스프레드를 전문적으로 해석하는 타로 마스터입니다. 사용자의 질문과 선택된 카드들을 바탕으로 깊이 있고 진심이 담긴 조언을 제공해 주세요. 단, 너무 구체적이거나 단정적인 해석보다는 추상적인 의미도 함께 제시하여 사용자가 스스로 해석할 여지를 남겨주세요. 실질적이고 구체적인 적용 방안을 제시하는 것에 초점을 맞춰주세요."
+# 스프레드에 따라 다른 덱에서 카드를 뽑는 함수
+def draw_cards(num_cards, spread_name):
+    if spread_name == "집시의 십자":
+        random.shuffle(gypsy_major_arcana_deck)
+        return random.sample(gypsy_major_arcana_deck, num_cards)
+    else:
+        random.shuffle(tarot_deck)
+        return random.sample(tarot_deck, num_cards)
+
+# JSON 파일에서 프롬프트와 스프레드 데이터를 불러옵니다.
+def load_data():
+    try:
+        with open('prompts.json', 'r', encoding='utf-8') as f:
+            prompts_data = json.load(f)
+        with open('spreads.json', 'r', encoding='utf-8') as f:
+            spreads_data = json.load(f)
+        return prompts_data, spreads_data
+    except FileNotFoundError:
+        st.error("데이터 파일을 찾을 수 없습니다. 'prompts.json'과 'spreads.json' 파일이 프로젝트 루트에 있는지 확인해주세요.")
+        st.stop()
+    except json.JSONDecodeError:
+        st.error("JSON 파일 형식이 올바르지 않습니다. 파일을 확인해주세요.")
+        st.stop()
+
+prompts_data, spreads_data = load_data()
+
+# 스프레드 모양을 시각적으로 표시하는 함수
+def display_spread_layout(spread_name, cards, spreads_data):
+    st.markdown("---")
+    st.subheader("뽑은 카드")
+    positions = spreads_data.get(spread_name, {}).get("positions", [])
+
+    if spread_name == "쓰리 카드 스프레드(3)":
+        cols = st.columns(3)
+        for i, card in enumerate(cards):
+            with cols[i]:
+                st.markdown(f"**{positions[i]}**")
+                st.write(card)
+    elif spread_name == "집시의 십자 스프레드(5)":
+        st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+        st.markdown(f"**{positions[3]}**")
+        st.write(cards[3])
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        cols = st.columns(3)
+        with cols[0]:
+            st.markdown(f"**{positions[0]}**")
+            st.write(cards[0])
+        with cols[1]:
+            st.markdown(f"**{positions[1]}**")
+            st.write(cards[1])
+        with cols[2]:
+            st.markdown(f"**{positions[2]}**")
+            st.write(cards[2])
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+        st.markdown(f"**{positions[4]}**")
+        st.write(cards[4])
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    elif spread_name == "켈틱 크로스(10)":
+        st.markdown("<div style='display: flex; justify-content: center; align-items: center;'>", unsafe_allow_html=True)
+        st.markdown("<div style='display: flex; flex-direction: column; align-items: center;'>", unsafe_allow_html=True)
+        for i in range(9, 5, -1):
+            st.markdown(f"**{positions[i]}**")
+            st.write(cards[i])
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        st.markdown("<div style='display: flex; flex-direction: column; align-items: center; justify-content: center; margin-left: 20px;'>", unsafe_allow_html=True)
+        
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        top_row = st.columns([1,1,1])
+        with top_row[1]:
+            st.markdown(f"**{positions[5]}**")
+            st.write(cards[5])
+        
+        mid_row = st.columns([1,1,1])
+        with mid_row[0]:
+            st.markdown(f"**{positions[3]}**")
+            st.write(cards[3])
+        with mid_row[1]:
+            st.markdown(f"**{positions[1]}**")
+            st.write(cards[1])
+            st.markdown(f"**{positions[0]}**")
+            st.write(cards[0])
+        with mid_row[2]:
+            st.markdown(f"**{positions[2]}**")
+            st.write(cards[2])
+
+        bottom_row = st.columns([1,1,1])
+        with bottom_row[1]:
+            st.markdown(f"**{positions[4]}**")
+            st.write(cards[4])
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+    
+    elif spread_name.startswith("다중선택 스프레드"):
+        st.markdown(f"**{positions[0]}**")
+        st.write(cards[0])
+        
+        for i in range(1, len(cards), 2):
+            st.markdown("---")
+            st.markdown(f"**선택지 {int((i+1)/2)}**")
+            cols = st.columns(2)
+            with cols[0]:
+                st.markdown(f"**{positions[1]}**")
+                st.write(cards[i])
+            with cols[1]:
+                st.markdown(f"**{positions[2]}**")
+                st.write(cards[i+1])
+
+    else:
+        for i, card in enumerate(cards):
+            st.markdown(f"**{i+1}. {positions[i]}**")
+            st.write(card)
+
+# Gemini API를 호출하여 AI의 타로 리딩을 가져오는 함수
+def get_ai_reading(category, user_prompt, spread_name, cards):
+    current_category = prompts_data.get(category, {})
+    prompt_template = current_category.get("templates", {}).get(spread_name)
+    
+    if not prompt_template:
+        st.warning(f"'{category}'에 대한 '{spread_name}' 템플릿이 아직 준비되지 않았습니다. 기본 프롬프트를 사용합니다.")
+        return "죄송합니다. 아직 해당 카테고리에 대한 리딩을 준비하지 못했습니다."
+
+    prompt = prompt_template.format(category=category, user_prompt=user_prompt, cards=', '.join(cards))
+    
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    response = model.generate_content(prompt)
+    return response.text
+
+# 앱의 메인 화면입니다.
+st.title("asTarot - 내가 쓰려고 만든 AI 타로")
+st.header("당신의 고민을 이야기해주세요.")
+
+# 1. 상위 고민 범주를 선택하는 드롭다운 메뉴를 만듭니다.
+main_category = st.selectbox(
+    "고민 범주를 선택하세요:",
+    ("해당 카테고리에 맞는 질문을 골라주세요", "관계", "성공", "결정", "탐색")
+)
+
+# 2. 하위 카테고리 및 질문 입력 필드 동적 생성
+sub_category = main_category
+user_input_label = "고민을 구체적으로 입력하세요:"
+choice_input_visible = False
+
+if main_category == "관계":
+    sub_category_options = ["연애", "대인관계", "기타"]
+    sub_category = st.radio("어떤 관계에 대한 고민인가요?", sub_category_options)
+    if sub_category == "연애":
+        user_input_label = "연애 상대방과의 관계와 구체적인 상황을 입력하세요:"
+    elif sub_category == "대인관계":
+        user_input_label = "가족, 친구, 동료, 온라인/익명 관계 등 상대방과의 구체적인 상황을 입력하세요:"
+    elif sub_category == "기타":
+        user_input_label = "반려동물, 식물 등 생명체 또는 덕질 대상, 사물과의 관계에 대한 구체적인 상황을 입력하세요:"
+elif main_category == "성공":
+    sub_category_options = ["금전운", "직업운", "학업운"]
+    sub_category = st.radio("어떤 성공에 대한 고민인가요?", sub_category_options)
+    if sub_category == "금전운":
+        user_input_label = "금전 흐름, 투자, 사업, 재테크, 복권 등 돈과 관련된 모든 고민을 구체적으로 입력하세요:"
+    elif sub_category == "직업운":
+        user_input_label = "취업, 이직, 승진, 사업 등 직업과 관련된 구체적인 고민을 입력하세요:"
+    elif sub_category == "학업운":
+        user_input_label = "시험, 전공, 진학 등 학업과 관련된 구체적인 고민을 입력하세요:"
+elif main_category == "결정":
+    sub_category_options = ["다중 선택", "우선순위 결정", "타이밍 결정", "포기 여부 결정", "접근 방식 결정", "가치 판단 및 윤리적 결정"]
+    sub_category = st.radio("어떤 종류의 결정에 대한 고민인가요?", sub_category_options)
+    if sub_category == "다중 선택":
+        choice_input_visible = True
+        user_input_label = "여러 선택지 중 가장 적합한 것을 고르기 위한 상황을 구체적으로 입력하세요:"
+    elif sub_category == "우선순위 결정":
+        user_input_label = "여러 가지를 모두 할 수 없을 때, 어떤 순서로 진행할지 고민하는 상황을 입력하세요:"
+    elif sub_category == "타이밍 결정":
+        user_input_label = "무엇을 할지는 정했지만 '언제' 할지 고민하는 상황을 구체적으로 입력하세요:"
+    elif sub_category == "포기 여부 결정":
+        user_input_label = "어떤 상황을 계속할지, 아니면 멈춰야 할지 고민하는 상황을 입력하세요:"
+    elif sub_category == "접근 방식 결정":
+        user_input_label = "목표는 같지만 '어떻게' 할지, 방법이나 방향을 선택하는 상황을 입력하세요:"
+    elif sub_category == "가치 판단 및 윤리적 결정":
+        user_input_label = "어떤 가치에 따라 결정을 내릴지 고민하고 있는 윤리적/가치적 문제를 입력하세요:"
+elif main_category == "탐색":
+    sub_category = "탐색"
+    user_input_label = "삶의 의미, 내면 탐구, 영성, 운명 등 근원적인 고민에 대해 자유롭게 입력하세요:"
+
+if main_category == "해당 카테고리에 맞는 질문을 골라주세요":
+    st.markdown("---")
+    st.write("고민 범주를 선택하면 맞춤형 질문이 나타납니다.")
+else:
+    user_input = st.text_area(user_input_label, height=150)
+    
+    if choice_input_visible:
+        choice_input = st.text_area("선택지들을 한 줄에 하나씩 입력하세요 (최대 5개):", height=150)
+        choices = [c.strip() for c in choice_input.split('\n') if c.strip()]
+        if len(choices) > 5:
+            st.warning("선택지는 최대 5개까지 입력할 수 있습니다.")
+            st.stop()
+    else:
+        choices = []
+
+    # 스프레드 목록을 동적으로 필터링
+    filtered_spreads = []
+    spread_name_map = {}
+    for name, data in spreads_data.items():
+        if 'categories' in data:
+            if sub_category in data['categories']:
+                display_name = f"{name}({data['num_cards']})"
+                filtered_spreads.append(display_name)
+                spread_name_map[display_name] = name
+
+    # 다중선택 스프레드 로직
+    if sub_category == "다중 선택":
+        if choices:
+            num_cards = 1 + len(choices) * 2
+            display_name = f"다중선택 스프레드({num_cards})"
+            filtered_spreads = [display_name]
+            spread_name_map[display_name] = "다중선택 스프레드"
+        else:
+            st.warning("선택지를 입력해주세요.")
+            st.stop()
+
+    spread_name_with_count = st.selectbox(
+        "사용할 스프레드를 선택하세요:",
+        options=filtered_spreads,
+        help="스프레드를 선택하면 리딩에 사용되는 카드 수와 위치별 의미가 달라집니다."
     )
     
-    card_list_str = ", ".join(cards)
-    full_prompt = f"사용자의 질문: '{prompt}'\n선택된 카드: {card_list_str}"
-    
-    try:
-        response = model.generate_content(full_prompt)
-        return response.text
-    except Exception as e:
-        st.error(f"타로 리딩 중 오류가 발생했습니다: {e}")
-        return "죄송합니다, 리딩을 가져오는 데 실패했습니다. 잠시 후 다시 시도해 주세요."
+    spread_name = spread_name_map.get(spread_name_with_count)
 
-def display_cards(selected_cards):
-    """
-    선택된 카드들을 UI에 표시합니다.
-    """
-    cols = st.columns(len(selected_cards))
-    for i, card in enumerate(selected_cards):
-        with cols[i]:
-            st.image(image_map[card], caption=card, use_column_width=True)
+    if st.button("리딩 시작"):
+        if not user_input:
+            st.warning("고민을 입력해주세요.")
+        elif sub_category == "다중 선택" and not choices:
+            st.warning("선택지를 입력해주세요.")
+        else:
+            with st.spinner('카드를 뽑고 있어요...'):
+                num_cards = spreads_data.get(spread_name, {}).get("num_cards", 0)
+                if spread_name == "다중선택 스프레드":
+                    num_cards = 1 + len(choices) * 2
+                
+                cards = draw_cards(num_cards, spread_name)
 
-st.title("타로 마스터")
-st.write("당신의 고민을 이야기하고 타로 카드의 지혜를 얻어보세요.")
-
-# --- 스프레드 선택 로직 ---
-st.sidebar.header("고민 범주 선택")
-main_category = st.sidebar.radio("주요 고민 범주:", ["연애", "성공", "선택", "인간관계", "탐색"])
-
-spread_options = []
-if main_category == "연애":
-    spread_options = [
-        "쓰리 카드 (3장, 관계의 과거/현재/미래)",
-        "집시의 십자 (5장, 관계 심층 분석)",
-        "썸/고백운 (3장, 썸의 흐름과 결과)",
-        "짝사랑운 (3장, 상대방의 마음과 관계 발전 가능성)",
-        "새로운 연애운 (3장, 앞으로 다가올 인연)",
-        "관계운 (3장, 관계의 문제점과 해결책)"
-    ]
-elif main_category == "성공":
-    spread_options = [
-        "쓰리 카드 (3장, 고민의 흐름과 결과)",
-        "금전운 (3장, 재정 상태의 흐름)",
-        "직업운 (3장, 직장생활의 방향성과 조언)",
-        "학업운 (3장, 학업 성과와 학습 방법)"
-    ]
-elif main_category == "선택":
-    spread_options = [
-        "양자택일 (2장, 두 선택지의 결과)",
-        "다중선택 (최대 5장, 여러 선택지 비교)",
-    ]
-elif main_category == "인간관계":
-    spread_options = [
-        "쓰리 카드 (3장, 고민의 흐름과 결과)",
-        "친구 관계 (3장, 관계의 문제점과 조언)",
-        "가족 관계 (3장, 가족 내 갈등 해결)",
-        "대인 관계 (3장, 대인 관계 개선을 위한 조언)"
-    ]
-elif main_category == "탐색":
-    spread_options = [
-        "원 카드 (1장, 간단한 질문에 대한 답)",
-        "오늘의 운세 (1장, 오늘의 에너지와 조언)",
-        "나의 재능 (3장, 숨겨진 재능과 잠재력)",
-        "인생의 의미 (5장, 인생의 방향성 탐색)"
-    ]
-
-selected_spread_text = st.sidebar.radio("스프레드 선택:", spread_options)
-selected_spread_name = selected_spread_text.split(" (")[0]
-st.markdown("---")
-
-# --- 세션 상태 관리 ---
-if 'show_result' not in st.session_state:
-    st.session_state.show_result = False
-if 'selected_cards' not in st.session_state:
-    st.session_state.selected_cards = []
-if 'last_spread' not in st.session_state:
-    st.session_state.last_spread = selected_spread_name
-if 'multi_choices' not in st.session_state:
-    st.session_state.multi_choices = [""]
-if 'choice_results' not in st.session_state:
-    st.session_state.choice_results = {}
-if 'last_user_input' not in st.session_state:
-    st.session_state.last_user_input = ""
-
-# 스프레드 변경 시 상태 초기화
-if st.session_state.last_spread != selected_spread_name:
-    st.session_state.show_result = False
-    st.session_state.selected_cards = []
-    st.session_state.multi_choices = [""]
-    st.session_state.choice_results = {}
-    st.session_state.last_user_input = ""
-    st.session_state.last_spread = selected_spread_name
-    st.rerun()
-
-st.header(f"'{selected_spread_name}' 스프레드")
-user_input = ""
-num_cards = 0
-
-# --- 스프레드별 로직 ---
-if selected_spread_name == "다중선택":
-    user_input = st.text_area("고민하고 있는 상황을 구체적으로 입력하세요:", height=150, key="multi_user_input")
-    
-    # + 버튼으로 선택지 추가
-    if st.button("+ 선택지 추가", disabled=len(st.session_state.multi_choices) >= 5):
-        st.session_state.multi_choices.append("")
-        st.rerun()
-
-    for i in range(len(st.session_state.multi_choices)):
-        st.session_state.multi_choices[i] = st.text_input(f"선택지 {chr(65+i)}:", value=st.session_state.multi_choices[i], key=f"choice_{i}")
-
-    if st.button("카드를 뽑겠습니다.", use_container_width=True, disabled=not (user_input and all(st.session_state.multi_choices))):
-        num_cards = len(st.session_state.multi_choices)
-        st.session_state.selected_cards = random.sample(tarot_deck, num_cards)
-        st.session_state.show_result = True
-        st.session_state.last_user_input = user_input
-        st.rerun()
-
-else: # 일반 스프레드
-    user_input = st.text_area("고민을 구체적으로 입력하세요:", height=150)
-    
-    if selected_spread_name == "원 카드":
-        num_cards = 1
-    elif selected_spread_name in ["양자택일", "오늘의 운세", "금전운", "직업운", "학업운", "친구 관계", "가족 관계", "대인 관계", "썸/고백운", "짝사랑운", "새로운 연애운", "관계운", "쓰리 카드", "나의 재능"]:
-        num_cards = 3
-    elif selected_spread_name in ["집시의 십자 (관계 심층 분석)", "인생의 의미"]:
-        num_cards = 5
-    elif selected_spread_name == "양자택일":
-        choice_a = st.text_input("선택지 A:")
-        choice_b = st.text_input("선택지 B:")
-        user_input = f"{user_input}\n선택지 A: {choice_a}\n선택지 B: {choice_b}"
-        num_cards = 2
-
-    if st.button("카드를 뽑겠습니다.", use_container_width=True, disabled=not user_input):
-        st.session_state.selected_cards = random.sample(tarot_deck, num_cards)
-        st.session_state.show_result = True
-        st.session_state.last_user_input = user_input
-        st.rerun()
-
-# --- 리딩 결과 화면 ---
-if st.session_state.show_result:
-    st.markdown("---")
-    st.subheader("뽑으신 카드")
-    display_cards(st.session_state.selected_cards)
-    
-    st.markdown("---")
-    st.subheader("타로 리딩 결과")
-
-    if selected_spread_name == "다중선택":
-        for i, choice in enumerate(st.session_state.multi_choices):
-            card = st.session_state.selected_cards[i]
-            if choice not in st.session_state.choice_results:
-                with st.spinner(f"'{choice}'에 대한 리딩을 가져오고 있습니다..."):
-                    prompt = f"질문: '{st.session_state.last_user_input}'의 상황에서 '{choice}'를 선택했을 때의 결과는 무엇인가요? 선택된 카드: {card}"
-                    reading = get_tarot_reading(prompt, [card], "다중선택")
-                    st.session_state.choice_results[choice] = reading
+            display_spread_layout(spread_name_with_count, cards, spreads_data)
             
-            st.markdown(f"**선택지 {chr(65+i)} ({choice}) 카드:**")
-            st.image(image_map[card], caption=card, use_column_width=True)
-            st.markdown(f"**리딩:**\n{st.session_state.choice_results[choice]}")
+            st.markdown("---")
+            st.subheader("타로 리딩 결과")
+            ai_response = get_ai_reading(sub_category, user_input, spread_name, cards)
+            st.write(ai_response)
             
-            # 모든 리딩에 적용되는 추가 질문 기능
-            st.markdown(f"---")
-            follow_up_prompt = st.text_input(f"'{choice}'에 대해 더 궁금한 점이 있으신가요?", key=f"follow_up_{i}")
-            if st.button("추가 질문하기", key=f"follow_up_btn_{i}", disabled=not follow_up_prompt):
-                with st.spinner("타로 마스터가 추가 질문에 답하고 있습니다..."):
-                    follow_up_reading = get_tarot_reading(follow_up_prompt, [card], "추가 질문")
-                    st.markdown(f"**타로 마스터의 답변:**\n{follow_up_reading}")
-
-    else: # 일반 스프레드
-        with st.spinner("타로 마스터가 카드를 해석하고 있습니다..."):
-            reading_result = get_tarot_reading(st.session_state.last_user_input, st.session_state.selected_cards, selected_spread_name)
-            st.markdown(reading_result)
-        
-        # 모든 리딩에 적용되는 추가 질문 기능
-        st.markdown(f"---")
-        follow_up_prompt = st.text_input("리딩 내용에 대해 더 궁금한 점이 있으신가요?", key="main_follow_up")
-        if st.button("추가 질문하기", key="main_follow_up_btn", disabled=not follow_up_prompt):
-            with st.spinner("타로 마스터가 추가 질문에 답하고 있습니다..."):
-                follow_up_reading = get_tarot_reading(follow_up_prompt, st.session_state.selected_cards, "추가 질문")
-                st.markdown(f"**타로 마스터의 답변:**\n{follow_up_reading}")
-
-
-    st.markdown("---")
-    if st.button("새로운 질문하기", use_container_width=True):
-        st.session_state.show_result = False
-        st.session_state.selected_cards = []
-        st.session_state.multi_choices = [""]
-        st.session_state.choice_results = {}
-        st.session_state.last_user_input = ""
-        st.rerun()
+            # 결과 화면에 버튼 추가
+            st.markdown("---")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("추가 질문하기"):
+                    st.info("이 기능은 추후 추가될 예정입니다.")
+            with col2:
+                if st.button("새로운 질문하기"):
+                    st.experimental_rerun()
