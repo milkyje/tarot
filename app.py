@@ -10,7 +10,8 @@ except KeyError:
     st.error("API 키가 설정되지 않았습니다. 사이드바의 'Manage App' -> 'Secrets' 메뉴에서 GEMINI_API_KEY를 설정해주세요.")
     st.stop()
 
-# 유틸리티 모듈에서 카드 덱과 드로우 함수를 불러옵니다.
+# 타로 카드 덱 리스트입니다.
+# 전체 78장
 tarot_deck = [
     "0. The Fool", "1. The Magician", "2. The High Priestess", "3. The Empress", "4. The Emperor", "5. The Hierophant", "6. The Lovers", "7. The Chariot", "8. Strength", "9. The Hermit", "10. Wheel of Fortune", "11. Justice", "12. The Hanged Man", "13. Death", "14. Temperance", "15. The Devil", "16. The Tower", "17. The Star", "18. The Moon", "19. The Sun", "20. Judgement", "21. The World",
     "Ace of Wands", "Two of Wands", "Three of Wands", "Four of Wands", "Five of Wands", "Six of Wands", "Seven of Wands", "Eight of Wands", "Nine of Wands", "Ten of Wands", "Page of Wands", "Knight of Wands", "Queen of Wands", "King of Wands",
@@ -19,9 +20,21 @@ tarot_deck = [
     "Ace of Pentacles", "Two of Pentacles", "Three of Pentacles", "Four of Pentacles", "Five of Pentacles", "Six of Pentacles", "Seven of Pentacles", "Eight of Pentacles", "Nine of Pentacles", "Ten of Pentacles", "Page of Pentacles", "Knight of Pentacles", "Queen of Pentacles", "King of Pentacles"
 ]
 
-def draw_cards(num_cards):
-    random.shuffle(tarot_deck)
-    return random.sample(tarot_deck, num_cards)
+# 집시의 십자 스프레드용 메이저 아르카나 카드 15장
+gypsy_major_arcana_deck = [
+    "0. The Fool", "1. The Magician", "2. The High Priestess", "3. The Empress", "4. The Emperor",
+    "5. The Hierophant", "6. The Lovers", "7. The Chariot", "8. Strength", "9. The Hermit",
+    "10. Wheel of Fortune", "11. Justice", "12. The Hanged Man", "13. Death", "14. Temperance"
+]
+
+# 스프레드에 따라 다른 덱에서 카드를 뽑는 함수
+def draw_cards(num_cards, spread_name):
+    if spread_name == "집시의 십자":
+        random.shuffle(gypsy_major_arcana_deck)
+        return random.sample(gypsy_major_arcana_deck, num_cards)
+    else:
+        random.shuffle(tarot_deck)
+        return random.sample(tarot_deck, num_cards)
 
 # JSON 파일에서 프롬프트와 스프레드 데이터를 불러옵니다.
 def load_data():
@@ -39,6 +52,88 @@ def load_data():
         st.stop()
 
 prompts_data, spreads_data = load_data()
+
+# 스프레드 모양을 시각적으로 표시하는 함수
+def display_spread_layout(spread_name, cards, spreads_data):
+    st.markdown("---")
+    st.subheader("뽑은 카드")
+    positions = spreads_data.get(spread_name, {}).get("positions")
+
+    if spread_name == "쓰리 카드 스프레드":
+        cols = st.columns(3)
+        for i, card in enumerate(cards):
+            with cols[i]:
+                st.markdown(f"**{positions[i]}**")
+                st.write(card)
+    elif spread_name == "집시의 십자":
+        # 십자 모양 구현: 가로 3개, 세로 3개
+        st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+        st.markdown(f"**{positions[3]}**")
+        st.write(cards[3])
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        cols = st.columns(3)
+        with cols[0]:
+            st.markdown(f"**{positions[0]}**")
+            st.write(cards[0])
+        with cols[1]:
+            st.markdown(f"**{positions[1]}**")
+            st.write(cards[1])
+        with cols[2]:
+            st.markdown(f"**{positions[2]}**")
+            st.write(cards[2])
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+        st.markdown(f"**{positions[4]}**")
+        st.write(cards[4])
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    elif spread_name == "켈틱 크로스":
+        # 복잡한 켈틱 크로스 구현
+        st.markdown("<div style='display: flex; justify-content: center; align-items: center;'>", unsafe_allow_html=True)
+        st.markdown("<div style='display: flex; flex-direction: column; align-items: center;'>", unsafe_allow_html=True)
+        # 켈틱크로스 지지대 (4카드)
+        for i in range(9, 5, -1):
+            st.markdown(f"**{positions[i]}**")
+            st.write(cards[i])
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        st.markdown("<div style='display: flex; flex-direction: column; align-items: center; justify-content: center; margin-left: 20px;'>", unsafe_allow_html=True)
+        
+        # 켈틱크로스 중심부 (6카드)
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        top_row = st.columns([1,1,1])
+        with top_row[1]:
+            st.markdown(f"**{positions[5]}**")
+            st.write(cards[5])
+        
+        mid_row = st.columns([1,1,1])
+        with mid_row[0]:
+            st.markdown(f"**{positions[3]}**")
+            st.write(cards[3])
+        with mid_row[1]:
+            st.markdown(f"**{positions[1]}**")
+            st.write(cards[1])
+            st.markdown(f"**{positions[0]}**")
+            st.write(cards[0])
+        with mid_row[2]:
+            st.markdown(f"**{positions[2]}**")
+            st.write(cards[2])
+
+        bottom_row = st.columns([1,1,1])
+        with bottom_row[1]:
+            st.markdown(f"**{positions[4]}**")
+            st.write(cards[4])
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+    else:
+        for i, card in enumerate(cards):
+            st.markdown(f"**{i+1}. {positions[i]}**")
+            st.write(card)
 
 # Gemini API를 호출하여 AI의 타로 리딩을 가져오는 함수
 def get_ai_reading(category, user_prompt, spread_name, cards):
@@ -126,9 +221,11 @@ else:
         else:
             with st.spinner('카드를 뽑고 있어요...'):
                 num_cards = spreads_data.get(spread_name, {}).get("num_cards")
-                cards = draw_cards(num_cards)
-                ai_response = get_ai_reading(sub_category, user_input, spread_name, cards)
+                cards = draw_cards(num_cards, spread_name)
+            
+            display_spread_layout(spread_name, cards, spreads_data)
             
             st.markdown("---")
             st.subheader("타로 리딩 결과")
+            ai_response = get_ai_reading(sub_category, user_input, spread_name, cards)
             st.write(ai_response)
