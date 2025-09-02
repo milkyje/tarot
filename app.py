@@ -99,32 +99,117 @@ if not st.session_state.show_results:
         user_input = st.text_area(user_input_label, height=150, placeholder=placeholder_text)
     
     # 스프레드 선택 로직
-    spread_options_map = {}
-    if main_category == "다중 선택":
-        # '다중 선택' 카테고리에는 '다중선택 스프레드'만 허용
-        spread_options_map["다중선택 스프레드"] = "다중선택 스프레드"
-    elif selected_category == "연애":
-        # '연애' 카테고리에는 '집시의 십자' 스프레드 추가
-        all_spreads = list(spreads_data.keys())
-        for spread in all_spreads:
-            if selected_category in spreads_data[spread].get("categories", []):
-                spread_options_map[spread] = spread
+    spread_name_map = {}
+    
+    # '다중 선택' 카테고리의 경우 '다중선택 스프레드'만 표시
+    if selected_category == "다중 선택":
+        filtered_spreads = ["다중선택 스프레드"]
+        spread_name_map["다중선택 스프레드"] = "다중선택 스프레드"
+    
+    # 그 외 카테고리의 경우 spreads.json의 categories에 맞는 스프레드만 필터링
     else:
-        # 그 외 모든 카테고리에는 '집시의 십자'와 '다중선택 스프레드'를 제외
-        all_spreads = list(spreads_data.keys())
-        for spread in all_spreads:
-            if selected_category in spreads_data[spread].get("categories", []) and spread not in ["집시의 십자", "다중선택 스프레드"]:
-                spread_options_map[spread] = spread
-
-    spread_display_names = list(spread_options_map.keys())
-
-    spread_name = st.selectbox(
+        filtered_spreads = []
+        if 'spreads_data' in locals() or 'spreads_data' in globals():
+            for spread_display_name, spread_info in spreads_data.items():
+                if selected_category in spread_info.get("categories", []):
+                    display_name = f"{spread_display_name} ({spread_info['num_cards']}장)"
+                    filtered_spreads.append(display_name)
+                    spread_name_map[display_name] = spread_display_name
+        else:
+            filtered_spreads = ["쓰리 카드 스프레드 (3장)", "켈틱 크로스 (10장)", "원 카드 (1장)"]
+            st.warning("spreads_data를 로드하는 데 문제가 발생했습니다. 기본 스프레드 목록을 표시합니다.")
+            
+    spread_name_with_count = st.selectbox(
         "사용할 스프레드를 선택하세요:",
-        options=spread_display_names,
+        options=filtered_spreads,
         help="스프레드를 선택하면 리딩에 사용되는 카드 수와 위치별 의미가 달라집니다."
     )
+    spread_name = spread_name_map.get(spread_name_with_count)
 
     choices = []
     if spread_name == "다중선택 스프레드":
         st.subheader("선택지 입력")
         num_choices = st.number_input("선택지 개수", min_value=2, max_value=5, value=2, step=1)
+        
+        for i in range(num_choices):
+            choice = st.text_input(f"선택지 {i + 1}", key=f"choice_{i}", placeholder=f"예시) 선택지 {i + 1}에 대한 구체적인 내용")
+            if choice:
+                choices.append(choice)
+
+    if st.button("리딩 시작"):
+        if not user_input:
+            st.warning("고민을 입력해주세요.")
+        elif spread_name == "다중선택 스프레드" and len(choices) < 2:
+            st.warning("두 개 이상의 선택지를 입력해주세요.")
+        else:
+            with st.spinner('카드를 뽑고 있어요...'):
+                spread_info = get_spread_info_from_display_name(spread_name, spreads_data)
+                num_cards = spread_info.get("num_cards", 0)
+
+                if spread_name == "다중선택 스프레드":
+                    num_cards = 1 + len(choices) * 2
+
+                cards = draw_cards(TAROT_DECK, num_cards, spread_name)
+
+            st.session_state.last_user_input = user_input
+            st.session_state.last_cards = cards
+            st.session_state.last_spread_name = spread_name
+            st.session_state.last_category = selected_category
+            st.session_state.last_choices = choices
+            st.session_state.show_results = True
+            st.rerun()
+
+# 결과 화면
+else:
+    st.subheader("뽑은 카드")
+    spread_info = get_spread_info_from_display_name(st.session_state.last_spread_name, spreads_data)
+    positions = spread_info.get("positions", [])
+    
+    col_count = 3
+    cols = st.columns(col_count)
+    
+    for i, card in enumerate(st.session_state.last_cards):
+        with cols[i % col_count]:
+            st.image(f"https://tarot-images-bucket.s3.ap-northeast-2.amazonaws.com/{card}.png", caption=f"{i+1}. {positions[i] if i < len(positions) else '카드'} - {card}")
+
+    st.markdown("---")
+    
+    st.subheader("타로 리딩 결과")
+    with st.spinner('AI가 카드를 해석하고 있어요...'):
+        ai_response, raw_prompt = get_ai_reading(
+            st.session_state.last_category, 
+            st.session_state.last_user_input, 
+            st.session_state.last_choices, 
+            st.session_state.last_spread_name, 
+            st.session_state.last_cards, 
+            prompts_data
+        )
+        st.session_state.last_ai_response = ai_response
+        st.session_state.last_ai_prompt = raw_prompt
+        st.write(ai_response)
+        
+    st.markdown("---")
+
+    # 프롬프트 보여주기
+    with st.expander("Gemini 1.5에 전달된 프롬프트 보기"):
+        st.code(st.session_state.last_ai_prompt, language='markdown')
+
+    st.markdown("---")
+
+    # 추가 질문 기능
+    follow_up_input = st.text_input("리딩 내용에 대해 더 궁금한 점이 있으신가요?", key="follow_up_input")
+    if st.button("추가 질문하기", disabled=not follow_up_input):
+        with st.spinner("타로 마스터가 추가 질문에 답하고 있습니다..."):
+            follow_up_response = get_follow_up_reading(
+                st.session_state.last_ai_response,
+                st.session_state.last_user_input,
+                st.session_state.last_cards,
+                follow_up_input
+            )
+            st.subheader("추가 질문에 대한 답변")
+            st.write(follow_up_response)
+            
+    # 새 질문 시작 버튼
+    st.markdown("---")
+    if st.button("새로운 질문 시작하기"):
+        reset_app()
