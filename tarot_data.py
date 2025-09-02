@@ -28,3 +28,10 @@ def draw_cards(deck, num_cards, spread_name):
         # 그 외 스프레드 로직: 전체 덱에서 무작위로 카드를 뽑습니다.
         return random.sample(deck, num_cards)
 
+# tarot_data.py 파일의 가장 마지막 줄에 아래 함수를 추가합니다.
+def get_spread_info_from_display_name(spread_display_name, spreads_data):
+    """표시용 스프레드 이름으로 실제 스프레드 정보를 찾는 함수"""
+    if spread_display_name == "다중선택 스프레드":
+        return spreads_data.get("다중선택 스프레드", {})
+    else:
+        return spreads_data.get(spread_display_name, {})
