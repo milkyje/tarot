@@ -43,7 +43,11 @@ st.title("asTarot - 내가 보려고 만든")
 # 메인 화면: 질문 입력
 if not st.session_state.show_results:
     st.subheader("고민 카테고리 선택")
-    main_categories = list(prompts_data.keys())
+    
+    # 상위 카테고리만 가져오도록 수정
+    main_categories = [key for key in prompts_data.keys() if isinstance(prompts_data[key], dict) and "templates" not in prompts_data[key]]
+    main_categories.append("탐색")
+    main_categories.append("다중 선택")
     main_category = st.selectbox("고민의 큰 카테고리를 선택하세요:", options=main_categories)
 
     selected_category = main_category
