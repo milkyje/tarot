@@ -3,6 +3,7 @@ from config import TAROT_DECK
 from tarot_data import load_spreads_data, load_prompts_data, draw_cards, get_spread_info_from_display_name
 from tarot_ai import get_ai_reading, get_follow_up_reading
 import json
+import pyperclip
 
 # 세션 상태 초기화
 if 'show_results' not in st.session_state:
@@ -137,9 +138,9 @@ if not st.session_state.show_results:
                 choices.append(choice)
 
     if st.button("리딩 시작"):
-        if not user_input:
-            st.warning("고민을 입력해주세요.")
-        elif spread_name == "다중선택 스프레드" and len(choices) < 2:
+        actual_user_input = user_input if user_input else "사용자가 질문을 입력하지 않았습니다."
+
+        if spread_name == "다중선택 스프레드" and len(choices) < 2:
             st.warning("두 개 이상의 선택지를 입력해주세요.")
         else:
             with st.spinner('카드를 뽑고 있어요...'):
@@ -151,7 +152,7 @@ if not st.session_state.show_results:
 
                 cards = draw_cards(TAROT_DECK, num_cards, spread_name)
 
-            st.session_state.last_user_input = user_input
+            st.session_state.last_user_input = actual_user_input
             st.session_state.last_cards = cards
             st.session_state.last_spread_name = spread_name
             st.session_state.last_category = selected_category
@@ -191,7 +192,14 @@ else:
     st.markdown("---")
 
     # 프롬프트 보여주기
-    with st.expander("Gemini 1.5에 전달된 프롬프트 보기"):
+    st.subheader("이 프롬프트로 다른 AI 모델에서도 리딩을 받아보세요.")
+    
+    col_prompt1, col_prompt2 = st.columns([1, 10])
+    with col_prompt1:
+        if st.button("프롬프트 복사"):
+            pyperclip.copy(st.session_state.last_ai_prompt)
+            st.success("프롬프트가 클립보드에 복사되었습니다!")
+    with col_prompt2:
         st.code(st.session_state.last_ai_prompt, language='markdown')
 
     st.markdown("---")
