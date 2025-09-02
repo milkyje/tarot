@@ -98,19 +98,25 @@ if not st.session_state.show_results:
     if main_category != "해당 카테고리에 맞는 질문을 골라주세요":
         user_input = st.text_area(user_input_label, height=150, placeholder=placeholder_text)
     
-    # 스프레드 선택
+    # 스프레드 선택 로직
     spread_options_map = {}
-    if selected_category == "다중 선택":
+    if main_category == "다중 선택":
+        # '다중 선택' 카테고리에는 '다중선택 스프레드'만 허용
         spread_options_map["다중선택 스프레드"] = "다중선택 스프레드"
+    elif selected_category == "연애":
+        # '연애' 카테고리에는 '집시의 십자' 스프레드 추가
+        all_spreads = list(spreads_data.keys())
+        for spread in all_spreads:
+            if selected_category in spreads_data[spread].get("categories", []):
+                spread_options_map[spread] = spread
     else:
-        for spread_display_name, spread_info in spreads_data.items():
-            if selected_category in spread_info.get("categories", []):
-                spread_options_map[spread_display_name] = spread_display_name
+        # 그 외 모든 카테고리에는 '집시의 십자'와 '다중선택 스프레드'를 제외
+        all_spreads = list(spreads_data.keys())
+        for spread in all_spreads:
+            if selected_category in spreads_data[spread].get("categories", []) and spread not in ["집시의 십자", "다중선택 스프레드"]:
+                spread_options_map[spread] = spread
 
     spread_display_names = list(spread_options_map.keys())
-    if "다중선택 스프레드" in spread_display_names:
-        spread_display_names.remove("다중선택 스프레드")
-        spread_display_names.insert(0, "다중선택 스프레드")
 
     spread_name = st.selectbox(
         "사용할 스프레드를 선택하세요:",
@@ -143,4 +149,23 @@ if not st.session_state.show_results:
 
                 cards = draw_cards(TAROT_DECK, num_cards, spread_name)
 
-            st.session_state.last_user_input
+            st.session_state.last_user_input = user_input
+            st.session_state.last_cards = cards
+            st.session_state.last_spread_name = spread_name
+            st.session_state.last_category = selected_category
+            st.session_state.last_choices = choices
+            st.session_state.show_results = True
+            st.rerun()
+
+# 결과 화면
+else:
+    st.subheader("뽑은 카드")
+    spread_info = get_spread_info_from_display_name(st.session_state.last_spread_name, spreads_data)
+    positions = spread_info.get("positions", [])
+    
+    col_count = 3
+    cols = st.columns(col_count)
+    
+    for i, card in enumerate(st.session_state.last_cards):
+        with cols[i % col_count]:
+            st.image(f"https://tarot-images-bucket.s3.ap-northeast-2.amazonaws
