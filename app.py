@@ -167,22 +167,23 @@ if st.session_state.show_results == False:
             )
             st.session_state.last_ai_prompt = raw_prompt
             st.session_state.prompt_ready = True
-    
-# '프롬프트 확인' 버튼을 누른 후에만 아래 UI를 보여줍니다.
+    # '프롬프트 확인' 버튼을 누른 후에만 아래 UI를 보여줍니다.
 if 'prompt_ready' in st.session_state and st.session_state.prompt_ready:
     st.markdown("---")
     st.subheader("이 프롬프트로 다른 AI 모델에서도 리딩을 받아보세요.")
-    
-    # 텍스트 복사 버튼을 제거하고, st.code 자체의 복사 기능을 사용하도록 변경
-    # col_prompt1, col_prompt2 = st.columns([1, 10])
-    # with col_prompt1:
-    #     if st.button("프롬프트 복사", key="copy_before"):
-    #         pyperclip.copy(st.session_state.last_ai_prompt)
-    #         st.success("프롬프트가 클립보드에 복사되었습니다!")
-    # with col_prompt2:
-    #     st.code(st.session_state.last_ai_prompt, language='markdown')
 
-    st.code(st.session_state.last_ai_prompt, language='markdown')
+    # HTML과 자바스크립트를 사용한 복사 버튼
+    prompt_text = st.session_state.last_ai_prompt
+    copy_button_html = f"""
+    <button onclick="navigator.clipboard.writeText(`{prompt_text}`).then(() => {{
+        window.alert('프롬프트가 클립보드에 복사되었습니다!');
+    }}, (err) => {{
+        window.alert('복사에 실패했습니다.');
+    }}); return false;">프롬프트 복사</button>
+    """
+    st.markdown(copy_button_html, unsafe_allow_html=True)
+
+    st.code(prompt_text, language='markdown')
 
     st.markdown("---")
     # 리딩을 실제로 진행하는 버튼
