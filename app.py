@@ -174,18 +174,19 @@ if 'prompt_ready' in st.session_state and st.session_state.prompt_ready:
     st.subheader("이 프롬프트로 다른 AI 모델에서도 리딩을 받아보세요.")
 
     # 텍스트 복사를 위한 HTML/JS
-    copy_button_html = """
-    <textarea id="prompt_text_area" style="position: absolute; left: -9999px;"></textarea>
-    <button onclick="
-        var text_area = document.getElementById('prompt_text_area');
-        text_area.value = document.getElementById('prompt_code_block').innerText;
-        text_area.select();
-        document.execCommand('copy');
-        alert('프롬프트가 클립보드에 복사되었습니다!');
-    ">프롬프트 복사</button>
-    """
-    st.markdown(copy_button_html, unsafe_allow_html=True)
-    st.code(st.session_state.last_ai_prompt, language='markdown', key='prompt_code_block')
+    if st.session_state.last_ai_prompt:
+        copy_button_html = """
+        <textarea id="prompt_text_area" style="position: absolute; left: -9999px;"></textarea>
+        <button onclick="
+            var text_area = document.getElementById('prompt_text_area');
+            text_area.value = document.getElementById('prompt_code_block').innerText;
+            text_area.select();
+            document.execCommand('copy');
+            alert('프롬프트가 클립보드에 복사되었습니다!');
+        ">프롬프트 복사</button>
+        """
+        st.markdown(copy_button_html, unsafe_allow_html=True)
+        st.code(st.session_state.last_ai_prompt, language='markdown', key='prompt_code_block')
 
     st.markdown("---")
     # 리딩을 실제로 진행하는 버튼
