@@ -173,13 +173,16 @@ if 'prompt_ready' in st.session_state and st.session_state.prompt_ready:
     st.markdown("---")
     st.subheader("이 프롬프트로 다른 AI 모델에서도 리딩을 받아보세요.")
     
-    col_prompt1, col_prompt2 = st.columns([1, 10])
-    with col_prompt1:
-        if st.button("프롬프트 복사", key="copy_before"):
-            pyperclip.copy(st.session_state.last_ai_prompt)
-            st.success("프롬프트가 클립보드에 복사되었습니다!")
-    with col_prompt2:
-        st.code(st.session_state.last_ai_prompt, language='markdown')
+    # 텍스트 복사 버튼을 제거하고, st.code 자체의 복사 기능을 사용하도록 변경
+    # col_prompt1, col_prompt2 = st.columns([1, 10])
+    # with col_prompt1:
+    #     if st.button("프롬프트 복사", key="copy_before"):
+    #         pyperclip.copy(st.session_state.last_ai_prompt)
+    #         st.success("프롬프트가 클립보드에 복사되었습니다!")
+    # with col_prompt2:
+    #     st.code(st.session_state.last_ai_prompt, language='markdown')
+
+    st.code(st.session_state.last_ai_prompt, language='markdown')
 
     st.markdown("---")
     # 리딩을 실제로 진행하는 버튼
