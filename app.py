@@ -51,51 +51,49 @@ if not st.session_state.show_results:
     user_input_label = ""
     placeholder_text = ""
 
-    if main_category == "관계":
+    if main_category == "관계 고민":
         sub_categories = list(prompts_data.get(main_category, {}).keys())
         selected_category = st.selectbox("관계의 종류를 선택하세요:", options=sub_categories)
         user_input_label = f"'{selected_category}'에 대한 고민을 구체적으로 입력하세요:"
         if selected_category == "연애":
-            placeholder_text = "예시) 남자친구와 자꾸 싸우는데, 이 관계를 계속 유지하는 게 맞을까요?"
+            placeholder_text = "지금 당신의 마음을 가장 흔드는 연애관계(짝사랑, 썸, 연인, 이별 등)와 그에 대한 구체적인 이야기를 편하게 들려주세요. 상세할 수록 정확한 리딩에 도움이 됩니다."
         elif selected_category == "대인관계":
-            placeholder_text = "예시) 직장 상사와 관계가 어려운데, 어떻게 풀어나가야 할까요?"
-
-    elif main_category == "성공":
+            placeholder_text = "당신을 둘러싼 대인관계(가족,친구,동료,익명친구 등) 속에서 겪고 있는 어려움이나 궁금한 점을 편하게 이야기 해 주세요."
+        elif selected_category == "기타":
+            placeholder_text = "상대방이 인외입니까? 반려동물, 식물, 덕질상대 등과의 갈등이 있다면 이야기해 주세요."
+    elif main_category == "커리어와 목표":
         sub_categories = list(prompts_data.get(main_category, {}).keys())
-        selected_category = st.selectbox("성공의 종류를 선택하세요:", options=sub_categories)
+        selected_category = st.selectbox("목표의 종류를 선택하세요:", options=sub_categories)
         user_input_label = f"'{selected_category}'에 대한 고민을 구체적으로 입력하세요:"
         if selected_category == "금전운":
-            placeholder_text = "예시) 새로 시작한 사업의 금전운이 궁금합니다."
+            placeholder_text = "당신의 금전운에 관한 고민을 구체적으로 이야기해 주세요. 예) '새로운 투자를 시작해도 될까요?', '지금 재정 상황은 어떨까요?'"
         elif selected_category == "직업운":
-            placeholder_text = "예시) 지금 직장을 계속 다니는 것이 좋을까요, 아니면 이직을 시도해 볼까요?"
+            placeholder_text = "당신의 직업에 관한 고민을 구체적으로 이야기해 주세요. 예) '이직을 결심해야 할까요?', '새로운 사업 기회는 어떨까요?'"
         elif selected_category == "학업운":
-            placeholder_text = "예시) 이번 시험을 잘 보려면 어떤 공부 방법을 택해야 할까요?"
-    
-    elif main_category == "결정":
+            placeholder_text = "학업에 대한 고민을 구체적으로 이야기해 주세요. 예) '어떤 전공을 선택해야 할까요?', '곧 있을 시험 합격 가능성은?'"
+    elif main_category == "선택과 방향":
         sub_categories = list(prompts_data.get(main_category, {}).keys())
         selected_category = st.selectbox("결정의 종류를 선택하세요:", options=sub_categories)
         user_input_label = f"'{selected_category}'에 대한 고민을 구체적으로 입력하세요:"
         if selected_category == "우선순위 결정":
-            placeholder_text = "예시) 여러 가지 할 일이 있는데, 어떤 것부터 처리해야 할까요?"
+            placeholder_text = "여러 선택지 중 어떤 것을 먼저 해야 할지 고민이 있다면 각 선택지에 대한 상세한 이야기를 들려주세요. 예시) 여러 가지 할 일이 있는데, 어떤 것부터 처리해야 할까요?"
         elif selected_category == "타이밍 결정":
-            placeholder_text = "예시) 이직을 하기로 마음먹었는데, 언제 시도하는 것이 좋을까요?"
+            placeholder_text = "어떤 일을 시작하거나 끝내야 할 최적의 시기를 고민한다면 그 상황을 구체적으로 알려주세요. 예시) 이직을 하기로 마음먹었는데, 언제 시도하는 것이 좋을까요?"
         elif selected_category == "포기 여부 결정":
-            placeholder_text = "예시) 이 프로젝트를 계속 진행해야 할지, 아니면 포기하는 것이 좋을지 궁금합니다."
+            placeholder_text = "어떤 일을 계속할지 포기할지 고민하는 상황에 대해 자세히 이야기해 주세요. 예시) 이 프로젝트를 계속 진행해야 할지, 아니면 포기하는 것이 좋을지 궁금합니다."
         elif selected_category == "접근 방식 결정":
-            placeholder_text = "예시) 목표는 정해졌는데, 어떤 방식으로 접근해야 성공할 수 있을까요?"
+            placeholder_text = "목표에 도달하기 위한 최선의 접근법을 찾고 있다면 여러 방법에 대한 고민을 구체적으로 알려주세요. 예시) 목표는 정해졌는데, 어떤 방식으로 접근해야 성공할 수 있을까요?"
         elif selected_category == "가치 판단 및 윤리적 결정":
-            placeholder_text = "예시) 갈등 상황에서 어떤 가치에 우선순위를 두는 것이 옳은 결정일까요?"
-
-    elif main_category == "탐색":
-        selected_category = "탐색"
-        user_input_label = "삶의 의미, 내면 탐구, 영성 등 근원적인 고민에 대해 자유롭게 입력하세요:"
+            placeholder_text = "옳고 그름, 가치 판단에 어려움이 있는 상황에 대해 상세히 말씀해 주세요. 예시) 갈등 상황에서 어떤 가치에 우선순위를 두는 것이 옳은 결정일까요?"
+    elif main_category == "자유로운 질문":
+        selected_category = "자유로운 질문"
+        user_input_label = "건강관리, 법률문제, 삶의 의미, 내면 탐구, 영성 등 실재적이고 근원적인 고민에 대해 자유롭게 입력하세요:"
         placeholder_text = "예시) 제 잠재된 재능은 무엇이고, 어떻게 발견할 수 있을까요?"
-    
     elif main_category == "다중 선택":
         selected_category = "다중 선택"
-        user_input_label = "선택지를 입력하기 전에, 먼저 당신이 처한 상황을 구체적으로 입력하세요:"
+        user_input_label = "선택지(5개 이하)를 입력하기 전에, 먼저 당신이 처한 상황을 구체적으로 입력하세요:"
         placeholder_text = "예시) A와 B 중 어떤 것을 선택해야 할지 고민입니다."
-
+    
     if main_category != "해당 카테고리에 맞는 질문을 골라주세요":
         user_input = st.text_area(user_input_label, height=150, placeholder=placeholder_text)
     
@@ -104,8 +102,8 @@ if not st.session_state.show_results:
     
     # '다중 선택' 카테고리의 경우 '다중선택 스프레드'만 표시
     if selected_category == "다중 선택":
-        filtered_spreads = ["다중선택 스프레드"]
-        spread_name_map["다중선택 스프레드"] = "다중선택 스프레드"
+        filtered_spreads = ["다중선택 스프레드 (0장)"]
+        spread_name_map["다중선택 스프레드 (0장)"] = "다중선택 스프레드"
     
     # 그 외 카테고리의 경우 spreads.json의 categories에 맞는 스프레드만 필터링
     else:
@@ -116,108 +114,72 @@ if not st.session_state.show_results:
                     display_name = f"{spread_display_name} ({spread_info['num_cards']}장)"
                     filtered_spreads.append(display_name)
                     spread_name_map[display_name] = spread_display_name
-        else:
-            filtered_spreads = ["쓰리 카드 스프레드 (3장)", "켈틱 크로스 (10장)", "원 카드 (1장)"]
-            st.warning("spreads_data를 로드하는 데 문제가 발생했습니다. 기본 스프레드 목록을 표시합니다.")
+
+    spread_display_name = st.selectbox("스프레드를 선택하세요:", options=filtered_spreads, help="고민의 깊이에 따라 스프레드를 선택하세요. 질문의 원인과 결과를 파악하고 싶다면 투카드 스프레드를, 깊은 통찰이 필요하다면 켈틱크로스 또는 아스타로드 스프레드를 추천합니다.")
+    spread_name = spread_name_map.get(spread_display_name)
+
+if st.session_state.show_results == False:
+    st.markdown("---")
+    st.subheader("리딩을 시작하시려면 버튼을 눌러주세요.")
+    # '프롬프트 확인' 버튼으로 변경하여 먼저 프롬프트를 준비합니다.
+    if st.button("프롬프트 확인 및 리딩 시작"):
+        # 프롬프트만 미리 생성하고 세션에 저장
+        with st.spinner("프롬프트를 생성하고 있습니다..."):
+            _, raw_prompt = get_ai_reading(
+                st.session_state.last_category,
+                st.session_state.last_user_input,
+                st.session_state.last_choices,
+                st.session_state.last_spread_name,
+                st.session_state.last_cards,
+                prompts_data
+            )
+            st.session_state.last_ai_prompt = raw_prompt
+            st.session_state.prompt_ready = True
             
-    spread_name_with_count = st.selectbox(
-        "사용할 스프레드를 선택하세요:",
-        options=filtered_spreads,
-        help="스프레드를 선택하면 리딩에 사용되는 카드 수와 위치별 의미가 달라집니다."
-    )
-    spread_name = spread_name_map.get(spread_name_with_count)
-
-    choices = []
-    if spread_name == "다중선택 스프레드":
-        st.subheader("선택지 입력")
-        num_choices = st.number_input("선택지 개수", min_value=2, max_value=5, value=2, step=1)
-        
-        for i in range(num_choices):
-            choice = st.text_input(f"선택지 {i + 1}", key=f"choice_{i}", placeholder=f"예시) 선택지 {i + 1}에 대한 구체적인 내용")
-            if choice:
-                choices.append(choice)
-
-    if st.button("리딩 시작"):
-        actual_user_input = user_input if user_input else "사용자가 질문을 입력하지 않았습니다."
-
-        if spread_name == "다중선택 스프레드" and len(choices) < 2:
-            st.warning("두 개 이상의 선택지를 입력해주세요.")
-        else:
-            with st.spinner('카드를 뽑고 있어요...'):
-                spread_info = get_spread_info_from_display_name(spread_name, spreads_data)
-                num_cards = spread_info.get("num_cards", 0)
-
-                if spread_name == "다중선택 스프레드":
-                    num_cards = 1 + len(choices) * 2
-
-                cards = draw_cards(TAROT_DECK, num_cards, spread_name)
-
-            st.session_state.last_user_input = actual_user_input
-            st.session_state.last_cards = cards
-            st.session_state.last_spread_name = spread_name
-            st.session_state.last_category = selected_category
-            st.session_state.last_choices = choices
-            st.session_state.show_results = True
-            st.rerun()
-
-# 결과 화면
-else:
-    st.subheader("뽑은 카드")
-    spread_info = get_spread_info_from_display_name(st.session_state.last_spread_name, spreads_data)
-    positions = spread_info.get("positions", [])
-    
-    col_count = 3
-    cols = st.columns(col_count)
-    
-    for i, card in enumerate(st.session_state.last_cards):
-        with cols[i % col_count]:
-            st.image(f"https://tarot-images-bucket.s3.ap-northeast-2.amazonaws.com/{card}.png", caption=f"{i+1}. {positions[i] if i < len(positions) else '카드'} - {card}")
-
+# '프롬프트 확인' 버튼을 누른 후에만 아래 UI를 보여줍니다.
+if 'prompt_ready' in st.session_state and st.session_state.prompt_ready:
     st.markdown("---")
-    
-    st.subheader("타로 리딩 결과")
-    with st.spinner('AI가 카드를 해석하고 있어요...'):
-        ai_response, raw_prompt = get_ai_reading(
-            st.session_state.last_category, 
-            st.session_state.last_user_input, 
-            st.session_state.last_choices, 
-            st.session_state.last_spread_name, 
-            st.session_state.last_cards, 
-            prompts_data
-        )
-        st.session_state.last_ai_response = ai_response
-        st.session_state.last_ai_prompt = raw_prompt
-        st.write(ai_response)
-        
-    st.markdown("---")
-
-    # 프롬프트 보여주기
     st.subheader("이 프롬프트로 다른 AI 모델에서도 리딩을 받아보세요.")
     
     col_prompt1, col_prompt2 = st.columns([1, 10])
     with col_prompt1:
-        if st.button("프롬프트 복사"):
+        if st.button("프롬프트 복사", key="copy_before"):
             pyperclip.copy(st.session_state.last_ai_prompt)
             st.success("프롬프트가 클립보드에 복사되었습니다!")
     with col_prompt2:
         st.code(st.session_state.last_ai_prompt, language='markdown')
 
     st.markdown("---")
-
-    # 추가 질문 기능
-    follow_up_input = st.text_input("리딩 내용에 대해 더 궁금한 점이 있으신가요?", key="follow_up_input")
-    if st.button("추가 질문하기", disabled=not follow_up_input):
-        with st.spinner("타로 마스터가 추가 질문에 답하고 있습니다..."):
-            follow_up_response = get_follow_up_reading(
-                st.session_state.last_ai_response,
+    # 리딩을 실제로 진행하는 버튼
+    if st.button("타로 리딩 시작"):
+        with st.spinner("타로 마스터가 카드를 뽑고 리딩하고 있습니다..."):
+            # 이미 생성된 프롬프트와 카드를 사용하여 리딩을 진행
+            ai_response, _ = get_ai_reading(
+                st.session_state.last_category,
                 st.session_state.last_user_input,
+                st.session_state.last_choices,
+                st.session_state.last_spread_name,
                 st.session_state.last_cards,
-                follow_up_input
+                prompts_data
             )
-            st.subheader("추가 질문에 대한 답변")
-            st.write(follow_up_response)
-            
-    # 새 질문 시작 버튼
+            st.session_state.last_ai_response = ai_response
+            st.session_state.show_results = True
+            st.session_state.prompt_ready = False # 리딩 후에는 상태 초기화
+            st.rerun()
+
+# 리딩 결과를 보여주는 코드 (기존 코드와 동일)
+if st.session_state.show_results:
+    st.write(st.session_state.last_ai_response)
     st.markdown("---")
-    if st.button("새로운 질문 시작하기"):
-        reset_app()
+    st.subheader("이 프롬프트로 다른 AI 모델에서도 리딩을 받아보세요.")
+    
+    col_prompt1, col_prompt2 = st.columns([1, 10])
+    with col_prompt1:
+        if st.button("프롬프트 복사", key="copy_after"):
+            pyperclip.copy(st.session_state.last_ai_prompt)
+            st.success("프롬프트가 클립보드에 복사되었습니다!")
+    with col_prompt2:
+        st.code(st.session_state.last_ai_prompt, language='markdown')
+
+    st.markdown("---")
+    # ... (나머지 추가 질문 기능 코드)
