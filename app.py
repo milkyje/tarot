@@ -100,20 +100,28 @@ if not st.session_state.show_results:
     # 스프레드 선택 로직
     spread_name_map = {}
     
+    # 모든 스프레드 목록을 먼저 준비합니다.
+    all_spread_display_names = []
+    for spread_display_name, spread_info in spreads_data.items():
+        all_spread_display_names.append(f"{spread_display_name} ({spread_info['num_cards']}장)")
+
     # '다중 선택' 카테고리의 경우 '다중선택 스프레드'만 표시
-    if selected_category == "다중 선택":
+    if main_category == "다중 선택":
         filtered_spreads = ["다중선택 스프레드 (0장)"]
-        spread_name_map["다중선택 스프레드 (0장)"] = "다중선택 스프레드"
     
-    # 그 외 카테고리의 경우 spreads.json의 categories에 맞는 스프레드만 필터링
+    # 사용자가 특정 카테고리를 선택한 경우에만 필터링합니다.
+    elif main_category and main_category != "전체 스프레드":
+        filtered_spreads = [
+            name for name in all_spread_display_names
+            if main_category in spreads_data.get(name.split(" (")[0], {}).get("categories", [])
+        ]
+    
+    # 그 외의 경우 (초기 로딩 시) 모든 스프레드를 표시합니다.
     else:
-        filtered_spreads = []
-        if 'spreads_data' in locals() or 'spreads_data' in globals():
-            for spread_display_name, spread_info in spreads_data.items():
-                if selected_category in spread_info.get("categories", []):
-                    display_name = f"{spread_display_name} ({spread_info['num_cards']}장)"
-                    filtered_spreads.append(display_name)
-                    spread_name_map[display_name] = spread_display_name
+        filtered_spreads = all_spread_display_names
+        
+    for display_name in filtered_spreads:
+        spread_name_map[display_name] = display_name.split(" (")[0]
 
     spread_display_name = st.selectbox("스프레드를 선택하세요:", options=filtered_spreads, help="고민의 깊이에 따라 스프레드를 선택하세요. 질문의 원인과 결과를 파악하고 싶다면 투카드 스프레드를, 깊은 통찰이 필요하다면 켈틱크로스 또는 아스타로드 스프레드를 추천합니다.")
     spread_name = spread_name_map.get(spread_display_name)
