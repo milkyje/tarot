@@ -128,7 +128,7 @@ if not st.session_state.show_results:
 
 if st.session_state.show_results == False:
     st.markdown("---")
-    st.subheader("리딩을 시작하시려면 버튼을 눌러주세요. (Gemini 1.5 API 사용중)")
+    st.subheader("리딩을 시작하시려면 버튼을 눌러주세요. (Gemini 1.5)")
     # '프롬프트 확인' 버튼으로 변경하여 먼저 프롬프트를 준비합니다.
     if st.button("프롬프트 확인 및 리딩 시작"):
         # 프롬프트만 미리 생성하고 세션에 저장
