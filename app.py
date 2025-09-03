@@ -60,7 +60,7 @@ if not st.session_state.show_results:
         elif selected_category == "대인관계":
             placeholder_text = "당신을 둘러싼 대인관계(가족,친구,동료,익명친구 등) 속에서 겪고 있는 어려움이나 궁금한 점을 편하게 이야기 해 주세요."
         elif selected_category == "기타":
-            placeholder_text = "상대방이 인외입니까? 반려동물, 식물, 덕질대상 등과의 갈등이 있다면 이야기해 주세요."
+            placeholder_text = "상대방이 인외입니까? 반려동물, 식물, 덕질상대 등과의 갈등이 있다면 이야기해 주세요."
     elif main_category == "커리어와 목표":
         sub_categories = list(prompts_data.get(main_category, {}).keys())
         selected_category = st.selectbox("목표의 종류를 선택하세요:", options=sub_categories)
@@ -182,4 +182,28 @@ if 'prompt_ready' in st.session_state and st.session_state.prompt_ready:
         with st.spinner("타로 마스터가 카드를 뽑고 리딩하고 있습니다..."):
             # 이미 생성된 프롬프트와 카드를 사용하여 리딩을 진행
             ai_response, _ = get_ai_reading(
-                st.session_state.last_category
+                st.session_state.last_category,
+                st.session_state.last_user_input,
+                st.session_state.last_choices,
+                st.session_state.last_spread_name,
+                st.session_state.last_cards,
+                prompts_data
+            )
+            st.session_state.last_ai_response = ai_response
+            st.session_state.show_results = True
+            st.session_state.prompt_ready = False # 리딩 후에는 상태 초기화
+            st.rerun()
+
+# 리딩 결과를 보여주는 코드 (기존 코드와 동일)
+if st.session_state.show_results:
+    st.write(st.session_state.last_ai_response)
+    st.markdown("---")
+    
+    # 추가 질문 기능
+    st.subheader("추가 질문하기")
+    follow_up_input = st.text_input("리딩 내용에 대해 더 궁금한 점이 있으신가요?", key="follow_up_input")
+    if st.button("추가 질문하기", disabled=not follow_up_input):
+        with st.spinner("타로 마스터가 추가 질문에 답하고 있습니다..."):
+            follow_up_response = get_follow_up_reading(st.session_state.last_ai_prompt, follow_up_input)
+            st.session_state.last_ai_response += f"\n\n**사용자의 추가 질문:** {follow_up_input}\n\n**타로 마스터의 답변:** {follow_up_response}"
+            st.experimental_rerun()
