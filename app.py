@@ -87,7 +87,7 @@ if not st.session_state.show_results:
             placeholder_text = "옳고 그름, 가치 판단에 어려움이 있는 상황에 대해 상세히 말씀해 주세요. 예시) 갈등 상황에서 어떤 가치에 우선순위를 두는 것이 옳은 결정일까요?"
     elif main_category == "자유로운 질문":
         selected_category = "자유로운 질문"
-        user_input_label = "건강관리, 법률문제, 삶의 의미, 내면 탐구, 영성 등 실재적이고 근원적인 고민에 대해 자유롭게 입력하세요:"
+        user_input_label = "건강관리, 법률문제, 삶의 의미, 내면 탐구, 영성 등 실재적이거나 근원적인 고민에 대해 자유롭게 입력하세요:"
         placeholder_text = "예시) 제 잠재된 재능은 무엇이고, 어떻게 발견할 수 있을까요?"
     elif main_category == "다중 선택":
         selected_category = "다중 선택"
@@ -128,7 +128,7 @@ if not st.session_state.show_results:
 
 if st.session_state.show_results == False:
     st.markdown("---")
-    st.subheader("리딩을 시작하시려면 버튼을 눌러주세요.")
+    st.subheader("리딩을 시작하시려면 버튼을 눌러주세요. (Gemini 1.5 API 사용중)")
     # '프롬프트 확인' 버튼으로 변경하여 먼저 프롬프트를 준비합니다.
     if st.button("프롬프트 확인 및 리딩 시작"):
         # 프롬프트만 미리 생성하고 세션에 저장
@@ -179,15 +179,12 @@ if 'prompt_ready' in st.session_state and st.session_state.prompt_ready:
 if st.session_state.show_results:
     st.write(st.session_state.last_ai_response)
     st.markdown("---")
-    st.subheader("이 프롬프트로 다른 AI 모델에서도 리딩을 받아보세요.")
     
-    col_prompt1, col_prompt2 = st.columns([1, 10])
-    with col_prompt1:
-        if st.button("프롬프트 복사", key="copy_after"):
-            pyperclip.copy(st.session_state.last_ai_prompt)
-            st.success("프롬프트가 클립보드에 복사되었습니다!")
-    with col_prompt2:
-        st.code(st.session_state.last_ai_prompt, language='markdown')
-
-    st.markdown("---")
-    # ... (나머지 추가 질문 기능 코드)
+    # 추가 질문 기능
+    st.subheader("추가 질문하기")
+    follow_up_input = st.text_input("리딩 내용에 대해 더 궁금한 점이 있으신가요?", key="follow_up_input")
+    if st.button("추가 질문하기", disabled=not follow_up_input):
+        with st.spinner("타로 마스터가 추가 질문에 답하고 있습니다..."):
+            follow_up_response = get_follow_up_reading(st.session_state.last_ai_prompt, follow_up_input)
+            st.session_state.last_ai_response += f"\n\n**사용자의 추가 질문:** {follow_up_input}\n\n**타로 마스터의 답변:** {follow_up_response}"
+            st.experimental_rerun()
