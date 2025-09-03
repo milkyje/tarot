@@ -60,7 +60,7 @@ if not st.session_state.show_results:
         elif selected_category == "대인관계":
             placeholder_text = "당신을 둘러싼 대인관계(가족,친구,동료,익명친구 등) 속에서 겪고 있는 어려움이나 궁금한 점을 편하게 이야기 해 주세요."
         elif selected_category == "기타":
-            placeholder_text = "상대방이 인외입니까? 반려동물, 식물, 덕질상대 등과의 갈등이 있다면 이야기해 주세요."
+            placeholder_text = "상대방이 인외입니까? 반려동물, 식물, 덕질대상 등과의 갈등이 있다면 이야기해 주세요."
     elif main_category == "커리어와 목표":
         sub_categories = list(prompts_data.get(main_category, {}).keys())
         selected_category = st.selectbox("목표의 종류를 선택하세요:", options=sub_categories)
@@ -105,32 +105,51 @@ if not st.session_state.show_results:
     for spread_display_name, spread_info in spreads_data.items():
         all_spread_display_names.append(f"{spread_display_name} ({spread_info['num_cards']}장)")
 
-    # '다중 선택' 카테고리의 경우 '다중선택 스프레드'만 표시
-    if main_category == "다중 선택":
-        filtered_spreads = ["다중선택 스프레드 (0장)"]
-    
-    # 사용자가 특정 카테고리를 선택한 경우에만 필터링합니다.
-    elif main_category and main_category != "전체 스프레드":
+    # 사용자가 선택한 카테고리에 따라 스프레드 목록을 필터링합니다.
+    if main_category and main_category != "전체 스프레드":
         filtered_spreads = [
             name for name in all_spread_display_names
             if main_category in spreads_data.get(name.split(" (")[0], {}).get("categories", [])
         ]
-    
-    # 그 외의 경우 (초기 로딩 시) 모든 스프레드를 표시합니다.
     else:
         filtered_spreads = all_spread_display_names
-        
+
     for display_name in filtered_spreads:
         spread_name_map[display_name] = display_name.split(" (")[0]
 
     spread_display_name = st.selectbox("스프레드를 선택하세요:", options=filtered_spreads, help="고민의 깊이에 따라 스프레드를 선택하세요. 질문의 원인과 결과를 파악하고 싶다면 투카드 스프레드를, 깊은 통찰이 필요하다면 켈틱크로스 또는 아스타로드 스프레드를 추천합니다.")
     spread_name = spread_name_map.get(spread_display_name)
+    
+    # 다중선택 스프레드가 선택되면 선택지 입력 필드를 표시하고 유효성을 검사합니다.
+    start_button_disabled = False
+    if "다중선택 스프레드" == spread_name:
+        st.subheader("선택지 입력")
+        st.markdown("점치고 싶은 선택지를 두 개 이상 입력해주세요. 엔터키로 구분됩니다.")
+        choices_input = st.text_area("선택지 목록 (예: A안, B안)", height=150)
+        choices_list = [c.strip() for c in choices_input.split('\n') if c.strip()]
+        st.session_state.last_choices = choices_list
+
+        num_choices = len(choices_list)
+        if num_choices < 2:
+            st.error(f"⚠️ 현재 선택지는 {num_choices}개입니다. 2개 이상 입력해주세요.")
+            start_button_disabled = True
+        elif num_choices > 5:
+            st.error(f"⚠️ 현재 선택지는 {num_choices}개입니다. 5개 이하로 입력해주세요.")
+            start_button_disabled = True
+        else:
+            st.success(f"✔️ 선택지 {num_choices}개가 입력되었습니다.")
+            st.session_state.last_choices = choices_list
+            start_button_disabled = False
+    
+    st.session_state.last_spread_name = spread_name
+    st.session_state.last_user_input = user_input
+    st.session_state.last_category = selected_category
+    st.session_state.last_choices = choices_list if 'choices_list' in locals() else []
 
 if st.session_state.show_results == False:
     st.markdown("---")
     st.subheader("리딩을 시작하시려면 버튼을 눌러주세요. (Gemini 1.5)")
-    # '프롬프트 확인' 버튼으로 변경하여 먼저 프롬프트를 준비합니다.
-    if st.button("프롬프트 확인 및 리딩 시작"):
+    if st.button("프롬프트 확인 및 리딩 시작", disabled=start_button_disabled):
         # 프롬프트만 미리 생성하고 세션에 저장
         with st.spinner("프롬프트를 생성하고 있습니다..."):
             _, raw_prompt = get_ai_reading(
@@ -143,7 +162,7 @@ if st.session_state.show_results == False:
             )
             st.session_state.last_ai_prompt = raw_prompt
             st.session_state.prompt_ready = True
-            
+    
 # '프롬프트 확인' 버튼을 누른 후에만 아래 UI를 보여줍니다.
 if 'prompt_ready' in st.session_state and st.session_state.prompt_ready:
     st.markdown("---")
@@ -163,28 +182,4 @@ if 'prompt_ready' in st.session_state and st.session_state.prompt_ready:
         with st.spinner("타로 마스터가 카드를 뽑고 리딩하고 있습니다..."):
             # 이미 생성된 프롬프트와 카드를 사용하여 리딩을 진행
             ai_response, _ = get_ai_reading(
-                st.session_state.last_category,
-                st.session_state.last_user_input,
-                st.session_state.last_choices,
-                st.session_state.last_spread_name,
-                st.session_state.last_cards,
-                prompts_data
-            )
-            st.session_state.last_ai_response = ai_response
-            st.session_state.show_results = True
-            st.session_state.prompt_ready = False # 리딩 후에는 상태 초기화
-            st.rerun()
-
-# 리딩 결과를 보여주는 코드 (기존 코드와 동일)
-if st.session_state.show_results:
-    st.write(st.session_state.last_ai_response)
-    st.markdown("---")
-    
-    # 추가 질문 기능
-    st.subheader("추가 질문하기")
-    follow_up_input = st.text_input("리딩 내용에 대해 더 궁금한 점이 있으신가요?", key="follow_up_input")
-    if st.button("추가 질문하기", disabled=not follow_up_input):
-        with st.spinner("타로 마스터가 추가 질문에 답하고 있습니다..."):
-            follow_up_response = get_follow_up_reading(st.session_state.last_ai_prompt, follow_up_input)
-            st.session_state.last_ai_response += f"\n\n**사용자의 추가 질문:** {follow_up_input}\n\n**타로 마스터의 답변:** {follow_up_response}"
-            st.experimental_rerun()
+                st.session_state.last_category
