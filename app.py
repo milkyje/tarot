@@ -125,7 +125,12 @@ if not st.session_state.show_results:
     if "다중선택 스프레드" == spread_name:
         st.subheader("선택지 입력")
         st.markdown("점치고 싶은 선택지를 두 개 이상 입력해주세요. 엔터키로 구분됩니다.")
-        choices_input = st.text_area("선택지 목록 (예: A안, B안)", height=150)
+        
+        # 텍스트 에어리어에 기본값 설정
+        choices_input = st.text_area("선택지 목록 (예: A안, B안)", 
+                                     value="선택지 A\n선택지 B", 
+                                     height=150)
+        
         choices_list = [c.strip() for c in choices_input.split('\n') if c.strip()]
         st.session_state.last_choices = choices_list
 
