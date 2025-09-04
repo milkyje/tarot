@@ -90,22 +90,31 @@ if not st.session_state.show_results:
     
     st.subheader("스프레드 선택")
     
-    # 수정된 부분: 선택된 세부 카테고리에 맞는 스프레드만 필터링
-    # categories 필터링 로직 수정 (예: '관계 고민' + '연애' -> '관계 고민_연애')
-    if main_category == "관계 고민" and selected_category == "연애":
-        filter_category = "관계 고민_연애"
-    else:
-        filter_category = main_category
+    # 수정된 부분: selected_category가 main_category와 다를 경우, 세부 카테고리로 필터링
+    valid_categories = [main_category]
+    if selected_category != main_category:
+        valid_categories.append(selected_category)
     
-    valid_spreads = [name for name, info in spreads_data.items() if filter_category in info['categories']]
-    selected_spread_name = st.selectbox("원하는 타로 스프레드를 선택하세요:", options=valid_spreads)
+    # '관계 고민_연애'와 같이 prompts.json에 정의된 특별한 카테고리를 위해 추가
+    if f"{main_category}_{selected_category}" in [cat for info in spreads_data.values() for cat in info['categories']]:
+        valid_categories.append(f"{main_category}_{selected_category}")
+    
+    valid_spreads = [
+        name for name, info in spreads_data.items()
+        if any(cat in valid_categories for cat in info['categories'])
+    ]
+    
+    if not valid_spreads:
+        st.warning("선택한 카테고리에 맞는 스프레드가 없습니다. 다른 카테고리를 선택해 주세요.")
+    else:
+        selected_spread_name = st.selectbox("원하는 타로 스프레드를 선택하세요:", options=valid_spreads)
 
-    # 선택된 스프레드에 대한 정보
-    spread_info = spreads_data.get(selected_spread_name)
-    if spread_info:
-        num_cards_to_draw = spread_info["num_cards"]
-        positions_text = ", ".join(spread_info["positions"])
-        st.info(f"선택한 스프레드는 **{num_cards_to_draw}장**의 카드를 사용합니다. 각 카드 위치의 의미는 다음과 같습니다: **{positions_text}**")
+        # 선택된 스프레드에 대한 정보
+        spread_info = spreads_data.get(selected_spread_name)
+        if spread_info:
+            num_cards_to_draw = spread_info["num_cards"]
+            positions_text = ", ".join(spread_info["positions"])
+            st.info(f"선택한 스프레드는 **{num_cards_to_draw}장**의 카드를 사용합니다. 각 카드 위치의 의미는 다음과 같습니다: **{positions_text}**")
     
     # 3개 버튼을 가로로 정렬
     col1, col2, col3 = st.columns(3)
@@ -113,7 +122,7 @@ if not st.session_state.show_results:
     # 1. 프롬프트 복사 버튼
     with col1:
         if st.button("프롬프트 복사", use_container_width=True):
-            if user_input and selected_spread_name:
+            if user_input and 'selected_spread_name' in locals():
                 st.session_state.last_user_input = user_input
                 st.session_state.last_spread_name = selected_spread_name
                 st.session_state.last_category = selected_category
@@ -150,7 +159,7 @@ if not st.session_state.show_results:
     # 2. 리딩하기 버튼
     with col2:
         if st.button("리딩하기", use_container_width=True):
-            if user_input and selected_spread_name:
+            if user_input and 'selected_spread_name' in locals():
                 with st.spinner("타로 마스터가 카드를 뽑고 리딩하고 있습니다..."):
                     # 프롬프트 생성 후 리딩 진행
                     st.session_state.last_user_input = user_input
