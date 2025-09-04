@@ -50,7 +50,7 @@ if not st.session_state.show_results:
     user_input_label = ""
     placeholder_text = ""
     
-    # 세부 카테고리 선택 로직 (기존과 동일)
+    # 세부 카테고리 선택 로직
     if main_category == "관계 고민":
         sub_categories = list(prompts_data.get(main_category, {}).keys())
         selected_category = st.selectbox("관계의 종류를 선택하세요:", options=sub_categories)
@@ -90,8 +90,14 @@ if not st.session_state.show_results:
     
     st.subheader("스프레드 선택")
     
-    # 선택된 카테고리에 맞는 스프레드만 필터링
-    valid_spreads = [name for name, info in spreads_data.items() if selected_category in info['categories']]
+    # 수정된 부분: 선택된 세부 카테고리에 맞는 스프레드만 필터링
+    # categories 필터링 로직 수정 (예: '관계 고민' + '연애' -> '관계 고민_연애')
+    if main_category == "관계 고민" and selected_category == "연애":
+        filter_category = "관계 고민_연애"
+    else:
+        filter_category = main_category
+    
+    valid_spreads = [name for name, info in spreads_data.items() if filter_category in info['categories']]
     selected_spread_name = st.selectbox("원하는 타로 스프레드를 선택하세요:", options=valid_spreads)
 
     # 선택된 스프레드에 대한 정보
@@ -119,7 +125,7 @@ if not st.session_state.show_results:
                 # 스프레드 정보에 맞는 프롬프트 템플릿 찾기
                 try:
                     # '관계 고민' 중 '연애' 카테고리의 '아스타로트 스프레드'에 대한 특별 처리
-                    if main_category == "관계 고민" and selected_category == "연애" and selected_spread_name == "아스타로트 스프레드":
+                    if main_category == "관계 고민" and selected_category == "연애" and selected_spread_name == "아스타로드 스프레드":
                         prompt_template = prompts_data[main_category][selected_category]['templates'][selected_spread_name]
                         formatted_prompt = prompt_template.format(
                             relationship_type=selected_category, 
