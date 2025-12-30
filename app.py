@@ -106,7 +106,7 @@ if st.button("운명의 카드 뽑기"):
                 final_prompt = template.replace("{user_prompt}", user_prompt).replace("{cards}", cards_text)
 
             # AI 모델 설정 및 실행
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-1.5-flash-latest')
             response = model.generate_content(style_instruction + final_prompt)
             
             # 결과 출력
