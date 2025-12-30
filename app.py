@@ -23,7 +23,7 @@ prompts_data = load_prompts_data()
 st.title("asTarot - 아스타로트 마스터")
 
 if not st.session_state.show_results:
-    # --- 폼(Form) 시작: 입력을 다 마칠 때까지 실행을 대기시킴 ---
+    # --- 2. 입력 폼 구간 ---
     with st.form("tarot_input_form"):
         st.subheader("고민 카테고리 및 정보 입력")
         
@@ -39,7 +39,7 @@ if not st.session_state.show_results:
 
         user_input = st.text_area("고민 내용을 입력하세요:", placeholder="상황을 구체적으로 적어주세요.")
         
-        # 해당 카테고리에 맞는 스프레드만 필터링
+        # 해당 카테고리에 맞는 스프레드 필터링
         valid_spreads = [
             name for name, info in spreads_data.items()
             if main_category in info["categories"] or f"{main_category}_{selected_category}" in info["categories"]
@@ -47,26 +47,26 @@ if not st.session_state.show_results:
         
         selected_spread_name = st.selectbox("타로 스프레드 선택:", options=valid_spreads)
         
-        # 폼 제출 버튼 (이 버튼을 눌러야만 코드가 돌아감)
+        # 제출 버튼
         submit_button = st.form_submit_button("운명의 카드 뽑기", use_container_width=True)
 
-    # --- 폼 제출 후 로직 ---
+    # --- 3. 실행 구간 (에러 방지를 위해 변수 재정의) ---
     if submit_button:
         if not user_input:
             st.warning("고민 내용을 먼저 입력해 주세요!")
         else:
-            with st.spinner("아스타로트 마스터가 카드를 해석하고 있습니다..."):
-                # 1. 스프레드 정보 가져오기
-                info = spreads_data.get(selected_spread_name)
-                
-                if info:
-                    # 2. 카드 뽑기
-                    num_to_draw = info.get("num_cards", 1)
-                    drawn = draw_cards(num_to_draw, TAROT_DECK)
-                    st.session_state.last_cards = drawn
-                    
-                    # 3. AI 리딩 실행
+            # 버튼 클릭 시점에 선택된 스프레드 정보를 다시 가져옵니다 (TypeError 해결 핵심)
+            target_info = spreads_data.get(selected_spread_name)
+            
+            if target_info:
+                with st.spinner("아스타로트 마스터가 카드를 해석하고 있습니다..."):
                     try:
+                        # 카드 뽑기
+                        num_to_draw = target_info.get("num_cards", 1)
+                        drawn = draw_cards(num_to_draw, TAROT_DECK)
+                        st.session_state.last_cards = drawn
+                        
+                        # AI 리딩 실행
                         ai_res, _ = get_ai_reading(
                             selected_category, 
                             user_input, 
@@ -80,13 +80,15 @@ if not st.session_state.show_results:
                         st.rerun()
                     except Exception as e:
                         st.error(f"리딩 중 오류가 발생했습니다: {e}")
+            else:
+                st.error("선택된 스프레드 정보를 찾을 수 없습니다.")
 
-    # 초기화 버튼은 폼 밖에 배치
+    # 초기화 버튼
     if st.button("전체 초기화"):
         reset_app()
 
 else:
-    # 결과 화면
+    # --- 4. 결과 출력 구간 ---
     st.subheader("타로 리딩 결과")
     st.markdown(st.session_state.last_ai_response)
     
