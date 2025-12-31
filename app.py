@@ -34,8 +34,8 @@ SPREAD_COUNTS = {
 }
 
 # 2. UI 구성
-st.set_page_config(page_title="asTarot 프롬프트", page_icon="🔮")
-st.title("🔮 asTarot 프롬프트 생성기")
+st.set_page_config(page_title="asTarot", page_icon="🔮")
+st.title("🔮 asTarot")
 
 main_cat = st.selectbox("대분류", list(PROMPTS.keys()))
 sub_cats = [k for k in PROMPTS[main_cat].keys() if k != "templates"]
